@@ -34,6 +34,7 @@
  <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta"/>
 </DataTable>
 
+
 <Grid cols = 3>
 
 ## 💵 Income Statement
@@ -75,12 +76,31 @@
  <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta"/>
 </DataTable>
 
+<div class = "mt-10"> </div>
+
+<Grid cols = 2>
+
+## 🧮 Consolidated Income Chart
+
+<div class = "relative mt-4 ml-70">
+ <p class="text-sm text-grey ml-auto">
+        📅 Selected Date: <Value data={selected_date_income} />
+</p>
+</div>
+</Grid>
+
+<div class = "mb-15"></div>
+<BarChart 
+    data={cons_inc_chart}
+    type = grouped
+/>
+
 <Grid cols = 3>
 
 ## 🏦 YTD Income Statement
 
 <div class="relative ml-25 mt-1">
-<Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Date" defaultValue="2025" order = 'date_sort desc'>
+<Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Year" defaultValue="2025" order = 'date_sort desc'>
 </Dropdown>
 <Info description="For the year 2019 data is from Apr-19 to Dec-19" color="red" />
 </div>
@@ -122,12 +142,32 @@
 <Column id = 'Variance vs LY YTD' fmt = '$0.00"%"' align="center" contentType="delta"/>
 </DataTable>
 
+<div class = "mt-10"> </div>
+
+<Grid cols = 2>
+
+## 🧮 Consolidated YTD Income Chart
+
+<div class = "relative mt-4 ml-70">
+ <p class="text-sm text-grey ml-auto">
+        📅 Selected Year: <Value data={selected_year_ytd} />
+</p>
+</div>
+
+</Grid>
+
+<div class = "mb-15"></div>
+<BarChart 
+    data={cons_ytd_inc}
+    type = grouped
+/>
+
 <Grid cols = 3>
 
 ## 🏦 Consolidated YTD Income
 
 <div class="relative ml-25 mt-1">
-<Dropdown data={date_filter_ytd_cons} name=date_filter_ytd_cons value=date_filter_ytd_cons title="Date" defaultValue="2025" order = 'date_sort desc'>
+<Dropdown data={date_filter_ytd_cons} name=date_filter_ytd_cons value=date_filter_ytd_cons title="Year" defaultValue="2025" order = 'date_sort desc'>
 </Dropdown>
 <Info description="For the year 2019 data is from Apr-19 to Dec-19" color="red" />
 </div>
@@ -1166,124 +1206,108 @@ FROM
     income_statement;
 ```
 
-```sql test
-WITH metric_order AS (
-    SELECT 
-        metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(period_date)) AS sort_order
-    FROM income_statement
-    WHERE 
-        entity = 'Global Green India'
-        AND TRIM(metric) IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
-    GROUP BY metric
+```sql cons_inc_chart
+WITH base_data AS (
+  SELECT 
+    metric AS Particulars,
+    MAX(CASE WHEN entity = 'Global Green India' THEN TRY_CAST(period_value AS DOUBLE) END) AS India,
+    MAX(CASE WHEN entity = 'Global Green Europe' THEN TRY_CAST(period_value AS DOUBLE) END) AS Europe
+  FROM income_statement
+  WHERE 
+    entity IN ('Global Green India', 'Global Green Europe')
+    AND metric IN ('Gross Margin', 'Variable Cost')
+    AND metric_type = 'Actual'
+    AND period_date = '${inputs.date_filter.value}'
+  GROUP BY metric
 ),
-ytd_window AS (
-    SELECT 
-        '${inputs.date_filter_ytd_cons.value}'::INT AS ytd_year,
 
-        CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
-                THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('Jan-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y')
-        END AS start_date,
+combined AS (
+  SELECT 
+    Particulars,
+    India,
+    Europe,
+    COALESCE(India, 0) + COALESCE(Europe, 0) AS Consolidated
+  FROM base_data
 
-        STRPTIME('Dec-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y') AS end_date,
+  UNION ALL
 
-        CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
-                THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('Jan-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y')
-        END AS ly_start_date,
-
-        STRPTIME('Dec-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y') AS ly_end_date
-),
-base AS (
-    SELECT 
-        TRIM(metric) AS metric,
-        metric_type,
-        STRPTIME(period_date, '%b-%y') AS period_date,
-        period_value
-    FROM income_statement
-    WHERE 
-        entity IN ('Global Green India', 'Global Green Europe')
-        AND TRIM(metric) IN ('Sales Revenue (Incl OI)', 'Gross Margin', 'EBITDA', 'EBIT', 'EBT')
-),
-filtered AS (
-    SELECT 
-        b.metric,
-        b.metric_type,
-        b.period_value,
-        b.period_date,
-        w.start_date,
-        w.end_date,
-        w.ly_start_date,
-        w.ly_end_date
-    FROM base b
-    CROSS JOIN ytd_window w
-),
-aggregated AS (
-    SELECT
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_sales_actual,
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_sales_aop,
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_sales_ly,
-
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_gm_actual,
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_gm_aop,
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_gm_ly,
-
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebitda_actual,
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebitda_aop,
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebitda_ly,
-
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebit_actual,
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebit_aop,
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebit_ly,
-
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebt_actual,
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebt_aop,
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebt_ly
-    FROM filtered
+  SELECT 
+    'Sales Revenue (Incl OI)' AS Particulars,
+    SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN India ELSE 0 END) AS India,
+    SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN Europe ELSE 0 END) AS Europe,
+    SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN COALESCE(India, 0) + COALESCE(Europe, 0) ELSE 0 END) AS Consolidated
+  FROM base_data
 )
 
-SELECT 
-    m.metric,
+SELECT * 
+FROM combined
+ORDER BY 
+  CASE 
+    WHEN Particulars = 'Sales Revenue (Incl OI)' THEN 0
+    WHEN Particulars = 'Gross Margin' THEN 1
+    WHEN Particulars = 'Variable Cost' THEN 2
+    ELSE 99
+  END
+```
 
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-    END AS "YTD Actual",
+```sql cons_ytd_inc
+WITH base_data AS (
+  SELECT 
+    metric AS Particulars,
+    entity,
+    SUM(TRY_CAST(period_value AS DOUBLE)) AS value
+  FROM income_statement
+  WHERE 
+    entity IN ('Global Green India', 'Global Green Europe')
+    AND metric IN ('Gross Margin', 'Variable Cost')
+    AND metric_type = 'Actual'
+    AND RIGHT(period_date, 2) = RIGHT('${inputs.date_filter_ytd.value}', 2)
+  GROUP BY metric, entity
+),
 
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-    END AS "YTD AOP",
+pivoted AS (
+  SELECT 
+    Particulars,
+    SUM(CASE WHEN entity = 'Global Green India' THEN value ELSE 0 END) AS India,
+    SUM(CASE WHEN entity = 'Global Green Europe' THEN value ELSE 0 END) AS Europe
+  FROM base_data
+  GROUP BY Particulars
+),
 
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-    END AS "LY Actual YTD",
+combined AS (
+  SELECT 
+    Particulars,
+    ROUND(India, 2) AS India,
+    ROUND(Europe, 2) AS Europe,
+    ROUND(COALESCE(India, 0) + COALESCE(Europe, 0), 2) AS Consolidated
+  FROM pivoted
 
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-    END AS "Variance vs AOP YTD",
+  UNION ALL
 
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-    END AS "Variance vs LY YTD"
+  SELECT 
+    'Sales Revenue (Incl OI)' AS Particulars,
+    ROUND(SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN India ELSE 0 END), 2),
+    ROUND(SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN Europe ELSE 0 END), 2),
+    ROUND(SUM(CASE WHEN Particulars IN ('Gross Margin', 'Variable Cost') THEN COALESCE(India, 0) + COALESCE(Europe, 0) ELSE 0 END), 2)
+  FROM pivoted
+)
 
-FROM aggregated a
-CROSS JOIN metric_order m
-ORDER BY m.sort_order;
+SELECT *
+FROM combined
+ORDER BY 
+  CASE 
+    WHEN Particulars = 'Sales Revenue (Incl OI)' THEN 0
+    WHEN Particulars = 'Gross Margin' THEN 1
+    WHEN Particulars = 'Variable Cost' THEN 2
+    ELSE 99
+  END
+
+```
+
+```sql selected_date_income
+SELECT '${inputs.date_filter.value}' AS Selected_Date;
+```
+
+```sql selected_year_ytd
+SELECT '${inputs.date_filter_ytd.value}' AS Selected_year
 ```

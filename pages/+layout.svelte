@@ -7,7 +7,7 @@
 
 <div class="flex flex-col min-h-screen w-full">
     <!-- Main Content Area with Sidebar and Breadcrumbs Hidden -->
-    <EvidenceDefaultLayout {data} hideBreadcrumbs = true hideSidebar = true logo = /globalgreen.png neverShowQueries = true >
+    <EvidenceDefaultLayout {data} hideBreadcrumbs = true hideSidebar = true logo = /globalgreen.png neverShowQueries = true>
         <slot slot="content" />
     </EvidenceDefaultLayout>
 
@@ -19,12 +19,7 @@
             <li><a href="/income_statement" class="hover:text-green-400">📑 Income Statement</a></li>
             <li><a href="/balance_sheet" class="hover:text-green-400">📊 Balance Sheet</a></li>
             <li><a href="/cashflow" class="hover:text-green-400">💰 Cash Flow</a></li>
-            <li><a href="/plant_utilization" class="hover:text-green-400">🏭 Plant Utilization</a></li>
-            
-            
-            
-            
-            
+            <li><a href="/plant_utilization" class="hover:text-green-400">🏭 Plant Utilization</a></li> 
         </ul>
     </footer>
     

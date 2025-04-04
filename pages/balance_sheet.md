@@ -62,7 +62,6 @@
 </DataTable>
 
 
-
 ```sql balance_data
 WITH current_year AS (
   SELECT

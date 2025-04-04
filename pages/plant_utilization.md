@@ -47,6 +47,42 @@
 </DataTable >
 </div>
 
+
+
+<!-- <div style="text-align: center; margin-bottom: 20px; font-weight: bold; margin-top: 90px">
+  <h2>Global Green India</h2>
+</div> -->
+
+
+<div style="text-align: center; margin-bottom: 20px; margin-top: 50px">
+  <h2><strong>{inputs.matric === 'GGCL' ? 'Global Green India' : 'Global Green Europe'}</strong></h2>
+</div>
+ 
+{#if inputs.matric === 'GGCL'}
+  <BarChart 
+    data={plant_combined_india}
+    labels="true"
+    labelSize="8"
+    labelFmt="0.00"
+    yBaseline="true"
+    stackTotalLabel="false"
+    type="grouped"
+  />
+{:else if inputs.matric === 'GGE'}
+  <BarChart 
+    data={plant_combined_europe}
+    labels="true"
+    labelSize="8"
+    labelFmt="0.00"
+    yBaseline="true"
+    stackTotalLabel="false"
+    type="grouped"
+  />
+{/if}
+
+
+
+
 ```sql date_filter
 SELECT DISTINCT period_date AS date_filter,
 STRPTIME(period_date, '%b-%y') AS date_sort
@@ -98,8 +134,6 @@ LEFT JOIN base b ON a.category = b.category AND b.period_type = 'CY AOP'
 LEFT JOIN base c ON a.category = c.category AND c.period_type = 'LY Actual'
 WHERE 
     a.period_type = 'CY Actual'
-
-
 ```
 
 ```sql plant_1
@@ -155,3 +189,110 @@ FROM
     plant_utilization;
 
 ```
+
+```sql plant_combined_india
+SELECT 
+  Category,
+
+  -- OBL columns
+  MAX(CASE WHEN plant_name = 'OBL' THEN "Cy Actual" END) AS OBL_Cy_Actual,
+  MAX(CASE WHEN plant_name = 'OBL' THEN "Cy Aop" END) AS OBL_Cy_Aop,
+  MAX(CASE WHEN plant_name = 'OBL' THEN "Ly Actual" END) AS OBL_Ly_Actual,
+
+
+  -- VKP columns
+  MAX(CASE WHEN plant_name = 'VKP' THEN "Cy Actual" END) AS VKP_Cy_Actual,
+  MAX(CASE WHEN plant_name = 'VKP' THEN "Cy Aop" END) AS VKP_Cy_Aop,
+  MAX(CASE WHEN plant_name = 'VKP' THEN "Ly Actual" END) AS VKP_Ly_Actual,
+
+
+FROM (
+  SELECT 
+    Category, 
+    'OBL' AS plant_name, 
+    "Cy Actual",
+    "Cy Aop",
+    "Ly Actual",
+    "Act Vs Aop %",
+    "Growth Vs Ly %"
+  FROM ${plant}
+  
+
+  UNION ALL
+
+  SELECT 
+    Category, 
+    'VKP' AS plant_name, 
+    "Cy Actual",
+    "Cy Aop",
+    "Ly Actual",
+    "Act Vs Aop %",
+    "Growth Vs Ly %"
+  FROM ${plant_1}
+  
+) AS combined
+
+GROUP BY Category
+ORDER BY 
+  CASE 
+    WHEN Category = 'Production' THEN 1
+    WHEN Category = 'Despatches' THEN 2
+    ELSE 99
+  END
+
+
+```
+
+```sql plant_combined_europe
+SELECT 
+  Category,
+
+  -- Puszta columns
+  MAX(CASE WHEN plant_name = 'Puszta' THEN "Cy Actual" END) AS Puszta_Cy_Actual,
+  MAX(CASE WHEN plant_name = 'Puszta' THEN "Cy Aop" END) AS Puszta_Cy_Aop,
+  MAX(CASE WHEN plant_name = 'Puszta' THEN "Ly Actual" END) AS Puszta_Ly_Actual,
+
+
+  -- Duna columns
+  MAX(CASE WHEN plant_name = 'Duna' THEN "Cy Actual" END) AS Duna_Cy_Actual,
+  MAX(CASE WHEN plant_name = 'Duna' THEN "Cy Aop" END) AS Duna_Cy_Aop,
+  MAX(CASE WHEN plant_name = 'Duna' THEN "Ly Actual" END) AS Duna_Ly_Actual,
+
+
+FROM (
+  SELECT 
+    Category, 
+    'Puszta' AS plant_name, 
+    "Cy Actual",
+    "Cy Aop",
+    "Ly Actual",
+    "Act Vs Aop %",
+    "Growth Vs Ly %"
+  FROM ${plant}
+
+
+  UNION ALL
+
+  SELECT 
+    Category, 
+    'Duna' AS plant_name, 
+    "Cy Actual",
+    "Cy Aop",
+    "Ly Actual",
+    "Act Vs Aop %",
+    "Growth Vs Ly %"
+  FROM ${plant_1}
+ 
+) AS combined
+
+GROUP BY Category
+ORDER BY 
+  CASE 
+    WHEN Category = 'Production' THEN 1
+    WHEN Category = 'Despatches' THEN 2
+    ELSE 99
+  END
+
+```
+
+

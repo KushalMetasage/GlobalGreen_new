@@ -26,6 +26,11 @@
 <Column id = 'Net Change' fmt = '0.00' contentType = 'delta'/>
 </DataTable>
 
+<!-- <ButtonGroup name="period_button" display="tabs">
+        <ButtonGroupItem valueLabel="Dec-23" value="Dec-23" default />
+        <ButtonGroupItem valueLabel="Dec-24" value="Dec-24" />
+</ButtonGroup> -->
+
 
 ```sql cash_flow
 SELECT 
@@ -50,8 +55,94 @@ GROUP BY
     company_name, particular
 ```
 
+<!-- ```sql date_pie
+SELECT 
+  company_name,
+  particular,
+  period_date,
+  CAST(NULLIF(TRIM(period_value), '') AS DECIMAL(10,2)) AS value
+FROM 
+  cashflow
+WHERE 
+  company_name = CASE '${inputs.matric}'
+    WHEN 'GGCL' THEN 'Global Green India'
+    WHEN 'GGE' THEN 'Global Green Europe'
+  END
+  AND period_date = '${inputs.period_button}'
+ORDER BY 
+  particular
+
+``` -->
+
 ```sql comm
 SELECT DISTINCT global_green_india, global_green_europe 
 FROM cashflow_comments
 ```
+
+<!--
+```sql pie_query
+SELECT 
+  particular AS pie,
+  MAX(CAST(NULLIF(TRIM(period_value), '') AS DECIMAL(10,2))) AS count
+FROM 
+  cashflow
+WHERE 
+  company_name = CASE '${inputs.matric}'
+    WHEN 'GGCL' THEN 'Global Green India'
+    WHEN 'GGE' THEN 'Global Green Europe'
+  END
+  AND period_date = '${inputs.period_button}'
+GROUP BY 
+  particular
+```
+
+```sql pie_data
+SELECT 
+  pie AS name, 
+  count AS raw_value,
+  ABS(count) AS value  -- use absolute value for pie chart size
+FROM ${pie_query}
+```
+
+<ECharts config={{
+  title: {
+    text: `Cash Flow - ${inputs.period_button} (${inputs.matric === 'GGCL' ? 'India' : 'Europe'})`,
+    left: 'center',
+    top: 10, // position title 10px from top
+    textStyle: {
+      fontSize: 16,
+      fontWeight: 'bold'
+    }
+  },
+  tooltip: {
+    formatter: (params) => {
+      const { name, data } = params;
+      return `${name}: ${data.raw_value} (${params.percent}%)`;
+    }
+  },
+  series: [
+    {
+      type: 'pie',
+      data: [...pie_data],
+      encode: {
+        value: 'value',
+        tooltip: ['raw_value']
+      },
+      radius: '60%', // optional: size of pie
+      center: ['50%', '60%'], // shift chart down to create margin
+      label: {
+        show: true,
+        formatter: '{b}',
+        overflow: 'break',
+        minAngle: 2
+      },
+      labelLine: {
+        length: 15,
+        length2: 10
+      }
+    }
+  ]
+}} />
+
+-->
 
