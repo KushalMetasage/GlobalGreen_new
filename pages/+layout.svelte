@@ -20,6 +20,11 @@
             <li><a href="/balance_sheet" class="hover:text-green-400">📊 Balance Sheet</a></li>
             <li><a href="/cashflow" class="hover:text-green-400">💰 Cash Flow</a></li>
             <li><a href="/plant_utilization" class="hover:text-green-400">🏭 Plant Utilization</a></li> 
+            <li><a href="/networth" class="hover:text-green-400">💼 Net Worth</a></li> 
+            <li><a href="/fixed_cost" class="hover:text-green-400">🧮 Fixed Cost</a></li>
+            <li><a href="/fixed_assets" class="hover:text-green-400">🏢 Fixed Assets</a></li>
+            <li><a href="/revenue_trend" class="hover:text-green-400">📈 Revenue Trend</a></li>
+
         </ul>
     </footer>
     

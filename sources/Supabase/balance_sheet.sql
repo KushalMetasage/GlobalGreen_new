@@ -5,5 +5,5 @@ SELECT
   period_date,
   period_value
 FROM
-  balance_sheet_items;
+  mmr.balance_sheet_items;
 

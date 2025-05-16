@@ -4,4 +4,4 @@ SELECT entity,
        category,
        period_type,
        period_value 
-FROM plant_utilization;
+FROM mmr.plant_utilization;

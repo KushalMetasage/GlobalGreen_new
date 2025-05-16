@@ -87,6 +87,8 @@
 SELECT DISTINCT period_date AS date_filter,
 STRPTIME(period_date, '%b-%y') AS date_sort
 FROM plant_utilization
+WHERE TRIM(period_date) IS NOT NULL
+  AND TRIM(period_date) <> ''
 ORDER BY date_sort DESC;
 ```
 

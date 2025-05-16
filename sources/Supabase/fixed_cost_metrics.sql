@@ -2,5 +2,7 @@ SELECT entity,
        metric,
        metric_type,
        period_date,
-       period_value
+       source_section,
+       period_value,
+       ytd
 FROM mmr.financial_metrics_monthly;

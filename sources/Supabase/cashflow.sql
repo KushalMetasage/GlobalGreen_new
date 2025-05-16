@@ -3,4 +3,4 @@ SELECT sno,
        particular,
        period_date,
        period_value
-FROM cashflow_items
+FROM mmr.cashflow_items

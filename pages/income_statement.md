@@ -99,18 +99,28 @@
 
 ## 🏦 YTD Income Statement
 
-<div class="relative ml-25 mt-1">
+<div class="relative mt-1 ml-25">
 <Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Year" defaultValue="2025" order = 'date_sort desc'>
 </Dropdown>
+
+
 <Info description="For the year 2019 data is from Apr-19 to Dec-19" color="red" />
 </div>
 
-<div class = "relative mt-4 ml-30">
+<div class="relative mt-1">
+<Dropdown data={month_filter_ytd} name=month_filter_ytd value=month_filter_ytd title="Month" 
+defaultValue="December" order="month_num">
+</Dropdown>
+
+</div>
+
+</Grid>
+
+<div class = "relative ml-1 mt-4">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_date_ytd_income} />
 </p>
 </div>
-</Grid>
 
 <div class="flex items-center justify-between w-full">
   <!-- Button Group on the Left -->
@@ -172,12 +182,19 @@
 <Info description="For the year 2019 data is from Apr-19 to Dec-19" color="red" />
 </div>
 
-<div class = "relative mt-4 ml-30">
+<div class="relative mt-1">
+<Dropdown data={month_filter_ytd_cons} name=month_filter_ytd_cons value=month_filter_ytd_cons title="Month" 
+defaultValue="December" order="month_num">
+</Dropdown>
+</div>
+
+</Grid>
+
+<div class = "relative mt-4 ml-1 mb-8">
 <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_date_ytd_cons} />
 </p>
 </div>
-</Grid>
 
 <DataTable data = {ytd_income_cons} rows= 20 title = "Values are in Million USD ($)" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric'title = "Particulars"/>
@@ -202,6 +219,8 @@
 SELECT DISTINCT period_date AS date_filter,
 STRPTIME(period_date, '%b-%y') AS date_sort
 FROM income_statement
+WHERE TRIM(period_date) IS NOT NULL
+  AND TRIM(period_date) <> ''
 ORDER BY date_sort DESC;
 ```
 
@@ -381,9 +400,12 @@ FROM
 ```
 
 ```sql date_cons
-SELECT DISTINCT period_date AS date_cons,
-STRPTIME(period_date, '%b-%y') AS date_sort
+SELECT DISTINCT 
+    period_date AS date_cons,
+    STRPTIME(period_date, '%b-%y') AS date_sort
 FROM income_statement
+WHERE TRIM(period_date) IS NOT NULL
+  AND TRIM(period_date) <> ''
 ORDER BY date_sort DESC;
 ```
 
@@ -661,6 +683,32 @@ ORDER BY
     date_sort DESC;
 ```
 
+```sql month_filter_ytd
+WITH month_lookup AS (
+    SELECT * FROM (VALUES
+        (1,  'January'),
+        (2,  'February'),
+        (3,  'March'),
+        (4,  'April'),
+        (5,  'May'),
+        (6,  'June'),
+        (7,  'July'),
+        (8,  'August'),
+        (9,  'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December')
+    ) AS m(month_num, month_name)
+)
+SELECT 
+    month_name AS month_filter_ytd,
+    month_name AS label,
+    month_num
+FROM month_lookup
+ORDER BY month_num;
+
+```
+
 ```sql ytd_income
 WITH metric_order AS (
     SELECT 
@@ -678,23 +726,103 @@ ytd_window AS (
     SELECT 
         '${inputs.date_filter_ytd.value}'::INT AS ytd_year,
 
-        -- Start and end for current year
+        -- Map month name to month number
+        CASE 
+            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+            ELSE 12
+        END AS ytd_month,
+
+        -- Start of current YTD
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019' 
                 THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('Jan-' || RIGHT('${inputs.date_filter_ytd.value}', 2), '%b-%y')
+            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd.value}', '%d-%m-%Y')
         END AS start_date,
 
-        STRPTIME('Dec-' || RIGHT('${inputs.date_filter_ytd.value}', 2), '%b-%y') AS end_date,
+        -- End of current YTD
+        (
+            STRPTIME(
+                CASE 
+                    WHEN '${inputs.date_filter_ytd.value}' = '2019' 
+                        THEN '01-' || LPAD(CAST(LEAST(
+                            CASE 
+                                WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                                WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                                WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                                WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                                WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                                WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                                WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                                WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                                WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                                WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                                WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                                WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                                ELSE 12
+                            END, 12
+                        ) AS TEXT), 2, '0') || '-2019'
+                    ELSE '01-' || LPAD(CAST(
+                        CASE 
+                            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                            ELSE 12
+                        END AS TEXT
+                    ), 2, '0') || '-' || '${inputs.date_filter_ytd.value}'
+                END, '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS end_date,
 
-        -- Start and end for last year
+        -- Start of LY YTD
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019' 
                 THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('Jan-' || LPAD(CAST((${inputs.date_filter_ytd.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y')
+            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd.value}::INT - 1), '%d-%m-%Y')
         END AS ly_start_date,
 
-        STRPTIME('Dec-' || LPAD(CAST((${inputs.date_filter_ytd.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y') AS ly_end_date
+        -- End of LY YTD
+        (
+            STRPTIME(
+                '01-' || LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-' || (${inputs.date_filter_ytd.value}::INT - 1),
+                '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS ly_end_date
 ),
 base AS (
     SELECT 
@@ -757,7 +885,15 @@ SELECT
     a."YTD Actual" - a."LY Actual YTD" AS "Variance vs LY YTD"
 FROM aggregated a
 LEFT JOIN metric_order m ON a.metric = m.metric
+WHERE 
+    a."YTD Actual" <> 0
+    OR a."YTD AOP" <> 0
+    OR a."LY Actual YTD" <> 0
+    OR a."YTD Actual" - a."YTD AOP" <> 0
+    OR a."YTD Actual" - a."LY Actual YTD" <> 0
 ORDER BY m.sort_order;
+
+
 ```
 
 ```sql ytd_perc
@@ -776,20 +912,100 @@ ytd_window AS (
         '${inputs.date_filter_ytd.value}'::INT AS ytd_year,
 
         CASE 
-            WHEN '${inputs.date_filter_ytd.value}' = '2019' 
+            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+            ELSE 12
+        END AS ytd_month,
+
+        -- Start of current YTD
+        CASE 
+            WHEN '${inputs.date_filter_ytd.value}' = '2019'
                 THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('Jan-' || RIGHT('${inputs.date_filter_ytd.value}', 2), '%b-%y')
+            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd.value}', '%d-%m-%Y')
         END AS start_date,
 
-        STRPTIME('Dec-' || RIGHT('${inputs.date_filter_ytd.value}', 2), '%b-%y') AS end_date,
+        -- End of current YTD
+        (
+            STRPTIME(
+                CASE 
+                    WHEN '${inputs.date_filter_ytd.value}' = '2019' 
+                        THEN '01-' || LPAD(CAST(LEAST(
+                            CASE 
+                                WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                                WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                                WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                                WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                                WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                                WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                                WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                                WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                                WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                                WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                                WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                                WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                                ELSE 12
+                            END, 12
+                        ) AS TEXT), 2, '0') || '-2019'
+                    ELSE '01-' || LPAD(CAST(
+                        CASE 
+                            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                            ELSE 12
+                        END AS TEXT
+                    ), 2, '0') || '-' || '${inputs.date_filter_ytd.value}'
+                END, '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS end_date,
 
+        -- Start and end of LY
         CASE 
-            WHEN '${inputs.date_filter_ytd.value}' = '2019' 
+            WHEN '${inputs.date_filter_ytd.value}' = '2019'
                 THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('Jan-' || LPAD(CAST((${inputs.date_filter_ytd.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y')
+            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd.value}::INT - 1), '%d-%m-%Y')
         END AS ly_start_date,
 
-        STRPTIME('Dec-' || LPAD(CAST((${inputs.date_filter_ytd.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y') AS ly_end_date
+        (
+            STRPTIME(
+                '01-' || LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-' || (${inputs.date_filter_ytd.value}::INT - 1),
+                '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS ly_end_date
 ),
 base AS (
     SELECT 
@@ -886,10 +1102,10 @@ COALESCE(
     END, 0
 ) AS "Variance vs LY YTD"
 
-
 FROM aggregated a
 CROSS JOIN metric_order m
 ORDER BY m.sort_order;
+
 
 ```
 
@@ -974,6 +1190,32 @@ ORDER BY
     date_sort DESC;
 ```
 
+```sql month_filter_ytd_cons
+WITH month_lookup AS (
+    SELECT * FROM (VALUES
+        (1,  'January'),
+        (2,  'February'),
+        (3,  'March'),
+        (4,  'April'),
+        (5,  'May'),
+        (6,  'June'),
+        (7,  'July'),
+        (8,  'August'),
+        (9,  'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December')
+    ) AS m(month_num, month_name)
+)
+SELECT 
+    month_name AS month_filter_ytd_cons,
+    month_name AS label,
+    month_num
+FROM month_lookup
+ORDER BY month_num;
+
+```
+
 ```sql ytd_income_cons
 WITH metric_order AS (
     SELECT 
@@ -991,23 +1233,102 @@ ytd_window AS (
     SELECT 
         '${inputs.date_filter_ytd_cons.value}'::INT AS ytd_year,
 
-        -- Start and end for current year
         CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+            ELSE 12
+        END AS ytd_month,
+
+        -- Start of current YTD
+        CASE 
+            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
                 THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('Jan-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y')
+            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y')
         END AS start_date,
 
-        STRPTIME('Dec-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y') AS end_date,
+        -- End of current YTD
+        (
+            STRPTIME(
+                CASE 
+                    WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
+                        THEN '01-' || LPAD(CAST(
+                            CASE 
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                                ELSE 12
+                            END AS TEXT
+                        ), 2, '0') || '-2019'
+                    ELSE '01-' || LPAD(CAST(
+                        CASE 
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                            ELSE 12
+                        END AS TEXT
+                    ), 2, '0') || '-' || '${inputs.date_filter_ytd_cons.value}'
+                END, '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS end_date,
 
-        -- Start and end for last year
+        -- Start of LY YTD
         CASE 
             WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
                 THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('Jan-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y')
+            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y')
         END AS ly_start_date,
 
-        STRPTIME('Dec-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y') AS ly_end_date
+        -- End of LY YTD
+        (
+            STRPTIME(
+                '01-' || LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-' || (${inputs.date_filter_ytd_cons.value}::INT - 1),
+                '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS ly_end_date
 ),
 base AS (
     SELECT 
@@ -1067,7 +1388,14 @@ SELECT
     a."YTD Actual" - a."LY Actual YTD" AS "Variance vs LY YTD"
 FROM aggregated a
 LEFT JOIN metric_order m ON a.metric = m.metric
+WHERE 
+    a."YTD Actual" <> 0
+    OR a."YTD AOP" <> 0
+    OR a."LY Actual YTD" <> 0
+    OR a."YTD Actual" - a."YTD AOP" <> 0
+    OR a."YTD Actual" - a."LY Actual YTD" <> 0
 ORDER BY m.sort_order;
+
 ```
 
 ```sql ytd_income_cons_perc
@@ -1086,20 +1414,80 @@ ytd_window AS (
         '${inputs.date_filter_ytd_cons.value}'::INT AS ytd_year,
 
         CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+            ELSE 12
+        END AS ytd_month,
+
+        -- Start date
+        CASE 
+            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
                 THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('Jan-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y')
+            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y')
         END AS start_date,
 
-        STRPTIME('Dec-' || RIGHT('${inputs.date_filter_ytd_cons.value}', 2), '%b-%y') AS end_date,
+        -- End date
+        (
+            STRPTIME(
+                '01-' || LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS end_date,
 
+        -- LY Start
         CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
+            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
                 THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('Jan-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y')
+            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y')
         END AS ly_start_date,
 
-        STRPTIME('Dec-' || LPAD(CAST((${inputs.date_filter_ytd_cons.value}::INT - 1) % 100 AS VARCHAR), 2, '0'), '%b-%y') AS ly_end_date
+        -- LY End
+        (
+            STRPTIME(
+                '01-' || LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS ly_end_date
 ),
 base AS (
     SELECT 
@@ -1196,6 +1584,7 @@ SELECT
 FROM aggregated a
 CROSS JOIN metric_order m
 ORDER BY m.sort_order;
+
 
 ```
 

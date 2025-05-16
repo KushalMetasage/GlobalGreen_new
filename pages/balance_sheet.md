@@ -91,6 +91,7 @@ next_year AS (
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
+  AND period_date = '${inputs.next_year_date.value}'  
 ),
 merged AS (
   SELECT
@@ -101,12 +102,11 @@ merged AS (
     n.next_year_date,
     c.current_value,
     n.next_year_value,
-    (c.current_value - n.next_year_value) AS variance
+    (n.next_year_value - c.current_value) AS variance
   FROM current_year c
   LEFT JOIN next_year n
     ON c.subcategory = n.sub_category
-    AND c.particulars = n.particulars
-    AND n.parsed_date = c.parsed_date + INTERVAL 1 year
+    AND c.particulars = n.particulars  
 ),
 grouped AS (
   SELECT *,
@@ -159,7 +159,6 @@ grouped AS (
   FROM merged
 )
 
-
 SELECT
   subcategory_group,
   subcategory,
@@ -190,7 +189,14 @@ ORDER BY date_sort DESC;
 
 ```sql next_year_date
 SELECT 
-  STRFTIME(STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year, '%b-%y') AS next_year_date
+  bs.period_date AS next_year_date,
+  STRPTIME(bs.period_date, '%b-%y') AS date_sort
+FROM balance_sheet bs
+WHERE bs.period_date = STRFTIME(
+  STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year, '%b-%y'
+)
+GROUP BY ALL
+
 ```
 
 ```sql comm
