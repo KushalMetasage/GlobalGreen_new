@@ -48,7 +48,7 @@
 
 ## 🏢 Fixed Assets Yearly
 
-<div class = "relative relative mb-5 mt-1">
+<div class = "relative relative mb-5 mt-1 ml-15">
 
 <Dropdown data={date_filter_yearly} name=date_filter_yearly value=date_filter_yearly title="Year" defaultValue="2024" order = 'date_sort desc'>
 </Dropdown>

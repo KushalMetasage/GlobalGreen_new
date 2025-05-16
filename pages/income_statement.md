@@ -216,12 +216,16 @@ defaultValue="December" order="month_num">
 </DataTable>
 
 ```sql date_filter
-SELECT DISTINCT period_date AS date_filter,
-STRPTIME(period_date, '%b-%y') AS date_sort
+SELECT DISTINCT 
+  period_date AS date_filter,
+  STRPTIME(period_date, '%b-%y') AS date_sort
 FROM income_statement
-WHERE TRIM(period_date) IS NOT NULL
+WHERE 
+  TRIM(period_date) IS NOT NULL
   AND TRIM(period_date) <> ''
+  AND period_date != 'Feb-25'  
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql income
@@ -396,7 +400,9 @@ ORDER BY
 SELECT 
     STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_inc
 FROM 
-    income_statement;
+    income_statement
+WHERE 
+    period_date != 'Feb-25';
 ```
 
 ```sql date_cons
@@ -406,6 +412,7 @@ SELECT DISTINCT
 FROM income_statement
 WHERE TRIM(period_date) IS NOT NULL
   AND TRIM(period_date) <> ''
+  AND period_date != 'Feb-25' 
 ORDER BY date_sort DESC;
 ```
 
@@ -606,7 +613,9 @@ ORDER BY m.sort_order;
 SELECT 
     STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_cons
 FROM 
-    income_statement;
+    income_statement
+WHERE 
+    period_date != 'Feb-25';
 ```
 
 ```sql date_filter_ytd

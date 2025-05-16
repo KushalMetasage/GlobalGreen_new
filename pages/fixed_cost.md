@@ -9,6 +9,12 @@
 
 </Grid>
 
+<div class = "relative">
+ <p class="text-sm text-grey ml-auto">
+        📅 Last Updated: <Value data={max_fixed_cost_date} />
+    </p>
+</div>
+
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric" display="tabs">
         <ButtonGroupItem valueLabel="Global Green India" value="GGCL" default />
@@ -67,7 +73,14 @@
 </Dropdown>
 </div>
 
+
 </Grid>
+
+<div class = "relative">
+ <p class="text-sm text-grey ml-auto">
+        📅 Last Updated: <Value data={max_fixed_cost_ytd} />
+    </p>
+</div>
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric_ytd" display="tabs">
@@ -129,6 +142,12 @@
 
 </Grid>
 
+<div class = "relative mb-7">
+ <p class="text-sm text-grey ml-auto">
+        📅 Last Updated: <Value data={max_fixed_cost_date} />
+    </p>
+</div>
+
 <DataTable data={fixed_cost_data_cons} 
     totalRow={true}
     rowshadowing={true}
@@ -181,6 +200,12 @@
 </div>
 
 </Grid>
+
+<div class = "relative mb-7">
+ <p class="text-sm text-grey ml-auto">
+        📅 Last Updated: <Value data={max_fixed_cost_ytd} />
+    </p>
+</div>
 
 <DataTable data={fixed_cost_data__ytd_cons} 
     totalRow={true}
@@ -360,3 +385,19 @@ WHERE source_section = 'Fixed Cost'
 GROUP BY period_date, ytd, metric
 ORDER BY period_date, metric;
 ```
+
+```sql max_fixed_cost_date
+SELECT 
+    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_fixed_cost_date
+FROM 
+    fixed_cost_metrics
+WHERE 
+    period_date != 'Feb-25';
+```    
+
+```sql max_fixed_cost_ytd
+SELECT 
+    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_fixed_cost_date
+FROM 
+    fixed_cost_metrics
+```    
