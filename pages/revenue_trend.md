@@ -25,6 +25,7 @@
 </ButtonGroup>
 </div>
 
+<div class = "mb-10"> 
 <LineChart 
   data={revenue_trend_yoy}
   x=year
@@ -32,6 +33,8 @@
   title="Year-on-Year Revenue Trend"
   markers=true
 />
+
+</div>
 
 ```sql date_filter
 SELECT DISTINCT 
