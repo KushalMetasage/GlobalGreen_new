@@ -344,7 +344,6 @@ SELECT
 FROM balance_sheet bs
 GROUP BY date_filter_yearly
 ORDER BY date_sort DESC;
-
 ```
 
 ```sql next_year_label

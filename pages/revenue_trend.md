@@ -18,12 +18,6 @@
   markers=true
 />
 
-<div class="flex items-center justify-between w-full">
-<ButtonGroup name="matric_yoy" display="tabs">
-        <ButtonGroupItem valueLabel="Global Green India" value="GGCL" default />
-        <ButtonGroupItem valueLabel="Global Green Europe" value="GGE" />
-</ButtonGroup>
-</div>
 
 <div class = "mb-10"> 
 <LineChart 
@@ -39,7 +33,7 @@
 ```sql date_filter
 SELECT DISTINCT 
   STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS date_filter,
-  MIN(STRPTIME(period_date, '%b-%y')) AS date_sort  -- optional for sorting
+  MIN(STRPTIME(period_date, '%b-%y')) AS date_sort  
 FROM income_statement
 WHERE TRIM(period_date) IS NOT NULL
   AND TRIM(period_date) <> ''
@@ -108,7 +102,7 @@ WITH base AS (
         period_value AS revenue
     FROM income_statement
     WHERE 
-        entity = CASE '${inputs.matric_yoy}'
+        entity = CASE '${inputs.matric}'
             WHEN 'GGCL' THEN 'Global Green India'
             WHEN 'GGE' THEN 'Global Green Europe'
         END
@@ -126,7 +120,7 @@ with_yoy AS (
     SELECT 
         year,
         current_year_revenue,
-        LAG(current_year_revenue) OVER (ORDER BY year) AS prev_year_revenue  -- ✅ already integer
+        LAG(current_year_revenue) OVER (ORDER BY year) AS prev_year_revenue  
     FROM yearly_agg
 ),
 final AS (
