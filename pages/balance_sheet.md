@@ -52,7 +52,7 @@
     rowshadowing={true}
     headerFontColor=Bold
     headerColor=#FFD700
-    title = "Values are in Million"
+    title = "Values are in Million" 
     >
 
 <Column id = subcategory totalFmt="Total" totalAgg="" subtotalFmt='@value'/>

@@ -1,6 +1,4 @@
 
-## 📦 Current Assets and Liabilities
-
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric" display="tabs">
@@ -9,8 +7,11 @@
 </ButtonGroup>
 </div>
 
-## 📦 Current Assets
-<div class = 'mb-5'></div>
+## 💵 Current Assets and Liabilities
+
+<div class = 'mb-5'> </div>
+
+<Grid cols = 2>
 
 <LineChart 
   data={curr_assets}
@@ -18,23 +19,60 @@
   y="total_current_assets"
   markers={true}
   sort={true}
+  title = 'Current Assets'
   yAxisTitle = "Values are in Million"
   xFmt="mmm-yy"                       
-  tooltipTitle="month_label"         
+  tooltipTitle="month_label" 
+  yFmt="0"        
 />
 
-## 💳 Current Liabilities
-<div class = 'mb-5'></div>
 
 <LineChart 
   data={curr_liab}
   x="month"
   y="total_current_liabilities"
   markers={true}
+  title = 'Current Liabilities'
   yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
+  yFmt="0"
 />
+
+</Grid>
+
+## 📦 Efficiency Metrics
+
+<div class = 'mb-5'> </div>
+
+<Grid cols = 2>
+
+<LineChart 
+  data={dso}
+  y="value"                        
+  markers={true}
+  yAxisTitle = "Values are in Million"
+  title = 'DSO'
+  sort={true}
+  xFmt="mmm-yy"
+  yFmt="0"
+  labelFmt="0"
+  tooltipFmt="0" 
+/>
+
+
+<LineChart 
+  data={dpo}
+  y="value"                        
+  markers={true}
+  title = 'DPO'
+  yAxisTitle = "Values are in Million"
+  sort={true}
+  xFmt="mmm-yy"
+  yFmt="0"
+/>
+
+</Grid>
 
 ## 📤 Trade Payables
 <div class = 'mb-5'></div>
@@ -47,30 +85,7 @@
   yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
-/>
-
-## 📆 DSO
-<div class = 'mb-5'></div>
-
-<LineChart 
-  data={dso}
-  y="value"                        
-  markers={true}
-  yAxisTitle = "Values are in Million"
-  sort={true}
-  xFmt="mmm-yy"
-/>
-
-## 📆 DPO
-<div class = 'mb-5'></div>
-
-<LineChart 
-  data={dpo}
-  y="value"                        
-  markers={true}
-  yAxisTitle = "Values are in Million"
-  sort={true}
-  xFmt="mmm-yy"
+  yFmt="0"
 />
 
 <div class = mb-15> </div>
@@ -183,13 +198,12 @@ SELECT
   STRPTIME(Date, '%b-%y') AS month,
   STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
   'Trade Payables' AS Particulars,
-  CASE '${inputs.matric}'
+  ROUND(CAST(CASE '${inputs.matric}'
     WHEN 'GGCL' THEN ggcl
     WHEN 'GGE' THEN gge
-  END AS value
+  END AS DOUBLE), 0) AS value
 FROM financial_bs
 WHERE Particulars = 'Trade Payables'
-
 ```
 
 ```sql dso
@@ -197,17 +211,17 @@ SELECT
   STRPTIME(Date, '%b-%y') AS month,
   STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
   'Trade Payables' AS Particulars,
-  CASE '${inputs.matric}'
+  ROUND(CAST(CASE '${inputs.matric}'
     WHEN 'GGCL' THEN ggcl
     WHEN 'GGE' THEN gge
-  END AS value
+  END AS DOUBLE), 0) AS value
 FROM financial_bs
 WHERE 
   Particulars = 'DSO'
-  AND CASE '${inputs.matric}'
+  AND CAST(CASE '${inputs.matric}'
     WHEN 'GGCL' THEN ggcl
     WHEN 'GGE' THEN gge
-  END != 0
+  END AS DOUBLE) != 0
 
 ```
 
@@ -216,16 +230,17 @@ SELECT
   STRPTIME(Date, '%b-%y') AS month,
   STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
   'Trade Payables' AS Particulars,
-  CASE '${inputs.matric}'
+  ROUND(CAST(CASE '${inputs.matric}'
     WHEN 'GGCL' THEN ggcl
     WHEN 'GGE' THEN gge
-  END AS value
+  END AS DOUBLE), 0) AS value
 FROM financial_bs
 WHERE 
   Particulars = 'DPO'
-  AND CASE '${inputs.matric}'
+  AND CAST(CASE '${inputs.matric}'
     WHEN 'GGCL' THEN ggcl
     WHEN 'GGE' THEN gge
-  END != 0
+  END AS DOUBLE) != 0
+
 
 ```

@@ -35,7 +35,7 @@
     rowshadowing={true}
     headerFontColor=Bold
     headerColor=#FFD700
-    title = "Values are in Million USD ($)">
+    title = "Values are in Million">
 
 <Column id = subcategory totalFmt="Total" totalAgg="" subtotalFmt='@value'/>
 <Column id = particulars totalFmt='0 "Line Items"' totalAgg=""/>
@@ -78,7 +78,7 @@
     rowshadowing={true}
     headerFontColor=Bold
     headerColor=#FFD700
-    title = "Values are in Million USD ($)">
+    title = "Values are in Million">
 
 <Column id = subcategory totalFmt="Total" totalAgg="" subtotalFmt='@value'/>
 <Column id = particulars totalFmt='0 "Line Items"' totalAgg=""/>

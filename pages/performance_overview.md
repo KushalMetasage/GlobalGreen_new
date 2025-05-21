@@ -76,7 +76,6 @@
   x="year"
   y="yoy_change"
   markers={true}
-  yAxisTitle = "Values are in Million"
   yFmt=".2f"
 />
 

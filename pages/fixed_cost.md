@@ -1,19 +1,21 @@
-<Grid col = 3>
+<Grid cols = 3>
 
 ## 🧾 Fixed Cost
 
-<div class = "relative relative mb-5 mt-1">
+<div class = "relative relative mb-5 mt-1 ml-20">
 <Dropdown data={date_filter} name=date_filter value=date_filter title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
 </div>
 
-</Grid>
-
-<div class = "relative">
+<div class = "relative mt-5 ml-25">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_fixed_cost_date} />
     </p>
 </div>
+
+</Grid>
+
+
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric" display="tabs">
@@ -64,24 +66,25 @@
 
 </DataTable>
 
-<Grid col = 2>
+<Grid cols = 3>
 
 ## 🧾 Fixed Cost YTD
 
-<div class = "relative relative mb-5 mt-1">
+<div class = "relative relative mb-5 mt-1 ml-20">
 <Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
 <Info description="Data not available for Jan-25 (Global Green India)" color="red" />
 </div>
 
-
-</Grid>
-
-<div class = "relative">
+<div class = "relative mt-5 ml-25">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_fixed_cost_ytd} />
     </p>
 </div>
+
+</Grid>
+
+
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric_ytd" display="tabs">
@@ -132,22 +135,24 @@
 
 </DataTable>
 
-<Grid col = 2>
+<Grid cols = 3>
 
 ## 🧾 Fixed Cost Consolidated
 
-<div class = "relative relative mb-5 mt-1">
+<div class = "relative relative mb-5 mt-1 ml-20">
 <Dropdown data={date_filter_cons} name=date_filter_cons value=date_filter_cons title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
 </div>
 
-</Grid>
-
-<div class = "relative mb-7">
+<div class = "relative mt-5 ml-25">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_fixed_cost_date} />
     </p>
 </div>
+
+</Grid>
+
+
 
 <DataTable data={fixed_cost_data_cons} 
     totalRow={true}
@@ -191,23 +196,25 @@
 
 </DataTable>
 
-<Grid col = 2>
+<Grid cols = 3>
 
 ## 🧾 Fixed Cost Consolidated YTD
 
-<div class = "relative relative mb-5 mt-1">
+<div class = "relative relative mb-5 mt-1 ml-20">
 <Dropdown data={date_filter_ytd_cons} name=date_filter_ytd_cons value=date_filter_ytd_cons title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
 <Info description="Data not available for Jan-25" color="red" />
 </div>
 
-</Grid>
-
-<div class = "relative mb-7">
+<div class = "relative mt-5 ml-25">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_fixed_cost_ytd} />
     </p>
 </div>
+
+</Grid>
+
+
 
 <DataTable data={fixed_cost_data__ytd_cons} 
     totalRow={true}
