@@ -34,7 +34,7 @@
     rowshadowing={true}
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Net Worth (Shareholders' Funds) – Values in Million USD ($)">
+    title="Net Worth (Shareholders' Funds) – Values are in Million USD ($)">
 
   <Column id="subcategory" totalFmt="Total" totalAgg="" subtotalFmt="@value" />
   <Column id="particulars" totalFmt='0 "Line Items"' totalAgg="" />
@@ -74,7 +74,7 @@
     rowshadowing={true}
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Net Worth (Shareholders' Funds) – Values in Million USD ($)">
+    title="Net Worth (Shareholders' Funds) – Values are in Million USD ($)">
 
   <Column id="subcategory" totalFmt="Total" totalAgg="" subtotalFmt="@value" />
   <Column id="particulars" totalFmt='0 "Line Items"' totalAgg="" />

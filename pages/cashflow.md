@@ -21,9 +21,9 @@
 
 <DataTable data = {cash_flow} rowshadowing={true} headerFontColor=Bold headerColor=#FFD700 title="Values are in Million USD ($)">
 <Column id = 'Particulars'/>
-<Column id = 'Dec-23' fmt = '0.00'/>
-<Column id = 'Dec-24' fmt = '0.00'/>
-<Column id = 'Net Change' fmt = '0.00' contentType = 'delta'/>
+<Column id = 'Dec-23' fmt = '$0.00'/>
+<Column id = 'Dec-24' fmt = '$0.00'/>
+<Column id = 'Net Change' fmt = '$0.00' contentType = 'delta'/>
 </DataTable>
 
 <!-- <ButtonGroup name="period_button" display="tabs">

@@ -24,9 +24,7 @@
             <li><a href="/fixed_cost" class="hover:text-green-400">Fixed Cost</a></li>
             <li><a href="/fixed_assets" class="hover:text-green-400">Fixed Assets</a></li>
             <li><a href="/revenue_trend" class="hover:text-green-400">Revenue Trend</a></li>
-            <li><a href="/receivables_and_payables" class="hover:text-green-400">Receivables and Payables</a></li>
             <li><a href="/ratio_analysis" class="hover:text-green-400">Ratio Analysis</a></li>
-            <li><a href="/cash_balances" class="hover:text-green-400">Cash Balances</a></li>
             <li><a href="/curr_assets_liab" class="hover:text-green-400">Current Assets and Liabilities</a></li>
             <li><a href="/performance_overview" class="hover:text-green-400">Performance Overview</a></li>
 

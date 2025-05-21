@@ -7,57 +7,69 @@
 </ButtonGroup>
 </div>
 
+## MoM Trend – EBITDA
+<div class = 'mb-5'> </div>
+
 <LineChart 
   data={overview_EBITDA}
   x="month"
   y="mom_change"
   yFmt=".2f" 
   series="metric"
-  title="MoM Trend – EBITDA"
   markers={true}
 />
+
+## MoM Trend – PBT
+<div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PBT}
   x="month"
   y="mom_change"
   series="metric"
-  title="MoM Trend – PBT"
   markers={true}
 />
+
+## MoM Trend – PAT
+<div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PAT}
   x="month"
   y="mom_change"
   series="metric"
-  title="MoM Trend – PAT"
   markers={true}
 />
+
+## YoY Trend – EBITDA
+<div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_EBITDA_yoy}
   x="year"
   y="yoy_change"
-  title="YoY Trend – EBITDA"
   markers={true}
   yFmt=".2f"
 />
+
+## YoY Trend – PBT
+<div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PBT_yoy}
   x="year"
   y="yoy_change"
-  title="YoY Trend – PBT"
   markers={true}
   yFmt=".2f"
 />
+
+## YoY Trend – PAT
+<div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PAT_yoy}
   x="year"
   y="yoy_change"
-  title="YoY Trend – PAT"
   markers={true}
   yFmt=".2f"
 />

@@ -29,7 +29,7 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Fixed Cost Breakdown"
+    title = "Values are in Million USD ($)"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
@@ -96,7 +96,7 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Fixed Cost Breakdown"
+    title = "Values are in Million USD ($)"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
@@ -155,7 +155,7 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Fixed Cost Breakdown"
+    title = "Values are in Million USD ($)"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
@@ -214,7 +214,7 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Fixed Cost Breakdown"
+    title = "Values are in Million USD ($)"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
