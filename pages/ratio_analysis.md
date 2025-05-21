@@ -1,6 +1,6 @@
 <Grid cols = 3>
 
-## Balance Sheet Ratio Analysis
+## 📊 Balance Sheet Ratio Analysis
 
 <div class = "relative relative mb-5 mt-1 ml-25">
 
@@ -8,7 +8,7 @@
 </Dropdown>
 </div>
 
-<div class= "relative mt-5 ml-10">
+<div class= "relative mt-5 ml-32">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_date} />
     </p>
@@ -27,7 +27,7 @@
   rowshadowing={true}
   headerFontColor="Bold"
   headerColor="#FFD700"
-  title = "Values are in Million USD ($)"
+  title = "Values are in Million"
 >
   <Column id="current_ratio" title="Current Ratio" fmt=usd align="center" />
   <Column id="working_capital" title="Working Capital" fmt=usd align="center" />
@@ -38,7 +38,7 @@
 
 <Grid cols = 3>
 
-## Income Statement Ratio Analysis
+## 📊 Income Statement Ratio Analysis
 
 <div class = "relative relative mb-5 mt-1 ml-25">
 
@@ -47,7 +47,7 @@
 
 </div>
 
-<div class= "relative mt-5 ml-10">
+<div class= "relative mt-5 ml-32">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_date_inc} />
     </p>
@@ -65,7 +65,7 @@
 <DataTable data={ratio_analysis_inc}
   rowshadowing={true}
   headerFontColor="Bold"
-  title = "Values are in Million USD ($)"
+  title = "Values are in Million" 
   headerColor="#FFD700"
 >
   <Column id="gross_margin" title="Gross Margin" fmt='0.00"%"' align="center" />
@@ -77,9 +77,9 @@
 
 <Grid cols = 3>
 
-## Cash Balances Monthly
+## 📊 Cash Balances Monthly
 
-<div class = "relative mt-1 ml-40">
+<div class = "relative mt-1 ml-23">
 <Dropdown data={date_filter_mon} name=date_filter_mon value=date_filter_mon title="Month" defaultValue="Dec-24" order = 'date_sort desc'>
 </Dropdown>
 </div>
@@ -103,14 +103,14 @@
   rowshadowing={true}
   headerFontColor="Bold"
   headerColor="#FFD700"
-  title = "Values are in Million USD ($)"
+  title = "Values are in Million"
 >
 <Column id = "cash_balance" Title = "Cash Balance" fmt = '$0.00' align='center'/>
 </DataTable>
 
 <Grid cols = 2>
 
-## Cash Balances Yearly
+## 📊 Cash Balances Yearly
 
 <div class = "relative mt-1">
 <Dropdown data={date_filter_yearly} name=date_filter_yearly value=date_filter_yearly title="Year" defaultValue="2024" order = 'date_sort desc'>
@@ -130,11 +130,12 @@
   rowshadowing={true}
   headerFontColor="Bold"
   headerColor="#FFD700"
-  title = "Values are in Million USD ($)"
+  title = "Values are in Million"
 >
 <Column id = "cash_balance" Title = "Cash Balance" fmt = '$0.00' align='center'/>
 </DataTable>
 
+<div class = 'mb-15'> </div>
 
 ```sql date_filter
 SELECT DISTINCT period_date AS date_filter,

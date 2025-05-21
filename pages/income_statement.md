@@ -16,22 +16,22 @@
 
 </Grid>
 
-<DataTable data = {consolidated} rows= 20 title = "Values are in Million USD ($)" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
+<DataTable data = {consolidated} rows= 20 title = "Values are in Million" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric' title = "Particulars"/>
-<Column id= "CY Actual" fmt='$0.00' align="center"/>
- <Column id= "CY AOP" fmt='$0.00' align="center"/>
- <Column id= "LY Actual" fmt='$0.00' align="center"/>
- <Column id= "Variance vs AOP" fmt='$0.00' align="center" contentType="delta"/>
- <Column id= "Variance vs LY" fmt='$0.00' align="center" contentType="delta"/>
+<Column id= "CY Actual" fmt='$0.00' align="center" title = 'CY Actual'/>
+ <Column id= "CY AOP" fmt='$0.00' align="center" title = 'CY AOP'/>
+ <Column id= "LY Actual" fmt='$0.00' align="center" title = 'LY Actual'/>
+ <Column id= "Variance vs AOP" fmt='$0.00' align="center" contentType="delta" title = 'Variance vs AOP'/>
+ <Column id= "Variance vs LY" fmt='$0.00' align="center" contentType="delta" title = 'Variance vs LY'/>
 </DataTable>
 
 <DataTable data = {consolidated_perc} rows= 20 rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric' title = "Particulars"/>
-<Column id= "CY Actual" fmt='0.00"%"' align="center"/>
- <Column id= "CY AOP" fmt='0.00"%"' align="center"/>
- <Column id= "LY Actual" fmt='0.00"%"' align="center"/>
- <Column id= "Variance vs AOP" fmt='0.00"%"' align="center" contentType="delta"/>
- <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta"/>
+<Column id= "CY Actual" fmt='0.00"%"' align="center" title = 'CY Actual'/>
+ <Column id= "CY AOP" fmt='0.00"%"' align="center" title = 'CY AOP'/>
+ <Column id= "LY Actual" fmt='0.00"%"' align="center" title = 'LY Actual'/>
+ <Column id= "Variance vs AOP" fmt='0.00"%"' align="center" contentType="delta" title = 'Variance vs AOP'/>
+ <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta" title = 'Variance vs LY'/>
 </DataTable>
 
 
@@ -58,22 +58,22 @@
 </ButtonGroup>
 </div>
 
-<DataTable data = {income} rows= 20 title = "Values are in Million USD ($)" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
+<DataTable data = {income} rows= 20 title = "Values are in Million" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric' title = "Particulars"/>
-<Column id= "CY Actual" fmt='$0.00' align="center"/>
- <Column id= "CY AOP" fmt='$0.00' align="center"/>
- <Column id= "LY Actual" fmt='$0.00' align="center"/>
- <Column id= "Variance vs AOP" fmt='$0.00' align="center" contentType="delta"/>
- <Column id= "Variance vs LY" fmt='$0.00' align="center" contentType="delta"/>
+<Column id= "CY Actual" fmt='$0.00' align="center" title = 'CY Actual'/>
+ <Column id= "CY AOP" fmt='$0.00' align="center" title = 'CY AOP'/>
+ <Column id= "LY Actual" fmt='$0.00' align="center" title = 'LY Actual'/>
+ <Column id= "Variance vs AOP" fmt='$0.00' align="center" contentType="delta" title = 'Variance vs AOP'/>
+ <Column id= "Variance vs LY" fmt='$0.00' align="center" contentType="delta" title = 'Variance vs LY'/>
 </DataTable>
 
 <DataTable data = {income_perc} rows= 20 rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric' title = "Particulars"/>
-<Column id= "CY Actual" fmt='0.00"%"' align="center"/>
- <Column id= "CY AOP" fmt='0.00"%"' align="center"/>
- <Column id= "LY Actual" fmt='0.00"%"' align="center"/>
- <Column id= "Variance vs AOP" fmt='0.00"%"' align="center" contentType="delta"/>
- <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta"/>
+<Column id= "CY Actual" fmt='0.00"%"' align="center" title = 'CY Actual'/>
+ <Column id= "CY AOP" fmt='0.00"%"' align="center" title = 'CY AOP'/>
+ <Column id= "LY Actual" fmt='0.00"%"' align="center" title = 'LY Actual'/>
+ <Column id= "Variance vs AOP" fmt='0.00"%"' align="center" contentType="delta" title = 'Variance vs AOP'/>
+ <Column id= "Variance vs LY" fmt='0.00"%"' align="center" contentType="delta" title = 'Variance vs LY'/>
 </DataTable>
 
 <div class = "mt-10"> </div>
@@ -95,11 +95,11 @@
     type = grouped
 />
 
-<Grid cols = 3>
+<Grid cols = 4 gapSize = none>
 
-## 🏦 YTD Income Statement
+## 💵 YTD Income
 
-<div class="relative mt-1 ml-25">
+<div class="relative mt-1 ml-15">
 <Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Year" defaultValue="2025" order = 'date_sort desc'>
 </Dropdown>
 
@@ -114,13 +114,15 @@ defaultValue="December" order="month_num">
 
 </div>
 
-</Grid>
-
 <div class = "relative ml-1 mt-4">
  <p class="text-sm text-grey ml-auto">
         📅 Last Updated: <Value data={max_date_ytd_income} />
 </p>
 </div>
+
+</Grid>
+
+
 
 <div class="flex items-center justify-between w-full">
   <!-- Button Group on the Left -->
@@ -133,23 +135,23 @@ defaultValue="December" order="month_num">
 
 
 
-<DataTable data = {ytd_income} rows= 20 title = "Values are in Million USD ($)" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
+<DataTable data = {ytd_income} rows= 20 title = "Values are in Million" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric' title = "Particulars"/>
-<Column id = 'YTD Actual' fmt = '$0.00' align="center"/>
-<Column id = 'YTD AOP' fmt = '$0.00' align="center"/>
-<Column id = 'LY Actual YTD' fmt = '$0.00' align="center"/>
-<Column id = 'Variance vs AOP YTD' fmt = '$0.00' align="center" contentType="delta"/>
-<Column id = 'Variance vs LY YTD' fmt = '$0.00' align="center" contentType="delta"/>
+<Column id = 'YTD Actual' fmt = '$0.00' align="center" title = 'YTD Actual'/>
+<Column id = 'YTD AOP' fmt = '$0.00' align="center" title = 'YTD AOP'/>
+<Column id = 'LY Actual YTD' fmt = '$0.00' align="center" title = 'LY Actual YTD'/>
+<Column id = 'Variance vs AOP YTD' fmt = '$0.00' align="center" contentType="delta" title = 'Variance vs AOP YTD'/>
+<Column id = 'Variance vs LY YTD' fmt = '$0.00' align="center" contentType="delta" title = 'Variance vs LY YTD'/>
 </DataTable>
 
 <DataTable data = {ytd_perc} rows= 20 rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 
 <Column id = 'metric' title = "Particulars"/>
-<Column id = 'YTD Actual' fmt = '$0.00"%"' align="center"/>
-<Column id = 'YTD AOP' fmt = '$0.00"%"' align="center"/>
-<Column id = 'LY Actual YTD' fmt = '$0.00"%"' align="center"/>
-<Column id = 'Variance vs AOP YTD' fmt = '$0.00"%"' align="center" contentType="delta"/>
-<Column id = 'Variance vs LY YTD' fmt = '$0.00"%"' align="center" contentType="delta"/>
+<Column id = 'YTD Actual' fmt = '$0.00"%"' align="center" title = 'YTD Actual'/>
+<Column id = 'YTD AOP' fmt = '$0.00"%"' align="center" title = 'YTD AOP'/>
+<Column id = 'LY Actual YTD' fmt = '$0.00"%"' align="center" title = 'LY Actual YTD'/>
+<Column id = 'Variance vs AOP YTD' fmt = '$0.00"%"' align="center" contentType="delta" title = 'Variance vs AOP YTD'/>
+<Column id = 'Variance vs LY YTD' fmt = '$0.00"%"' align="center" contentType="delta" title = 'Variance vs LY YTD'/>
 </DataTable>
 
 <div class = "mt-10"> </div>
@@ -172,11 +174,11 @@ defaultValue="December" order="month_num">
     type = grouped
 />
 
-<Grid cols = 3>
+<Grid cols = 4 gapSize = none>
 
-## 🏦 Consolidated YTD Income
+## 💵 Consolidated YTD Income
 
-<div class="relative ml-25 mt-1">
+<div class="relative ml-15 mt-1">
 <Dropdown data={date_filter_ytd_cons} name=date_filter_ytd_cons value=date_filter_ytd_cons title="Year" defaultValue="2025" order = 'date_sort desc'>
 </Dropdown>
 <Info description="For the year 2019 data is from Apr-19 to Dec-19" color="red" />
@@ -188,7 +190,6 @@ defaultValue="December" order="month_num">
 </Dropdown>
 </div>
 
-</Grid>
 
 <div class = "relative mt-4 ml-1 mb-8">
 <p class="text-sm text-grey ml-auto">
@@ -196,24 +197,29 @@ defaultValue="December" order="month_num">
 </p>
 </div>
 
-<DataTable data = {ytd_income_cons} rows= 20 title = "Values are in Million USD ($)" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
+</Grid>
+<div class = 'mb-5'> </div>
+
+<DataTable data = {ytd_income_cons} rows= 20 title = "Values are in Million" rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 <Column id = 'metric'title = "Particulars"/>
-<Column id = 'YTD Actual' fmt = '$0.00' align="center"/>
-<Column id = 'YTD AOP' fmt = '$0.00' align="center"/>
-<Column id = 'LY Actual YTD' fmt = '$0.00' align="center"/>
-<Column id = 'Variance vs AOP YTD' fmt = '$0.00' align="center" contentType="delta"/>
-<Column id = 'Variance vs LY YTD' fmt = '$0.00' align="center" contentType="delta"/>
+<Column id = 'YTD Actual' fmt = '$0.00' align="center" title = 'YTD Actual'/>
+<Column id = 'YTD AOP' fmt = '$0.00' align="center" title = 'YTD AOP'/>
+<Column id = 'LY Actual YTD' fmt = '$0.00' align="center" title = 'LY Actual YTD'/>
+<Column id = 'Variance vs AOP YTD' fmt = '$0.00' align="center" contentType="delta" title = 'Variance vs AOP YTD'/>
+<Column id = 'Variance vs LY YTD' fmt = '$0.00' align="center" contentType="delta" title = 'Variance vs LY YTD'/>
 </DataTable>
 
 <DataTable data = {ytd_income_cons_perc} rows= 20 rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
 
 <Column id = 'metric' title = "Particulars"/>
-<Column id = 'YTD Actual' fmt = '$0.00"%"' align="center"/>
-<Column id = 'YTD AOP' fmt = '$0.00"%"' align="center"/>
-<Column id = 'LY Actual YTD' fmt = '$0.00"%"' align="center"/>
-<Column id = 'Variance vs AOP YTD' fmt = '$0.00"%"' align="center" contentType="delta"/>
-<Column id = 'Variance vs LY YTD' fmt = '$0.00"%"' align="center" contentType="delta"/>
+<Column id = 'YTD Actual' fmt = '$0.00"%"' align="center" title = 'YTD Actual'/>
+<Column id = 'YTD AOP' fmt = '$0.00"%"' align="center" title = 'YTD AOP'/>
+<Column id = 'LY Actual YTD' fmt = '$0.00"%"' align="center" title = 'LY Actual YTD'/>
+<Column id = 'Variance vs AOP YTD' fmt = '$0.00"%"' align="center" contentType="delta" title = 'Variance vs AOP YTD'/>
+<Column id = 'Variance vs LY YTD' fmt = '$0.00"%"' align="center" contentType="delta" title = 'Variance vs LY YTD'/>
 </DataTable>
+
+<div class = 'mb-10'> </div>
 
 ```sql date_filter
 SELECT DISTINCT 

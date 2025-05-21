@@ -1,4 +1,4 @@
-## Performance Overview
+## 📝 Performance Overview
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric" display="tabs">
@@ -7,7 +7,7 @@
 </ButtonGroup>
 </div>
 
-## MoM Trend – EBITDA
+## 📈 MoM Trend – EBITDA
 <div class = 'mb-5'> </div>
 
 <LineChart 
@@ -15,33 +15,36 @@
   x="month"
   y="mom_change"
   yFmt=".2f" 
+  yAxisTitle = "Values are in Million"
   series="metric"
   markers={true}
 />
 
-## MoM Trend – PBT
+## 📈 MoM Trend – PBT
 <div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PBT}
   x="month"
   y="mom_change"
+  yAxisTitle = "Values are in Million"
   series="metric"
   markers={true}
 />
 
-## MoM Trend – PAT
+## 📈 MoM Trend – PAT
 <div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_PAT}
   x="month"
   y="mom_change"
+  yAxisTitle = "Values are in Million"
   series="metric"
   markers={true}
 />
 
-## YoY Trend – EBITDA
+## 📈 YoY Trend – EBITDA
 <div class = 'mb-5'> </div>
 
 <LineChart 
@@ -50,9 +53,10 @@
   y="yoy_change"
   markers={true}
   yFmt=".2f"
+  yAxisTitle = "Values are in Million"
 />
 
-## YoY Trend – PBT
+## 📈 YoY Trend – PBT
 <div class = 'mb-5'> </div>
 
 <LineChart 
@@ -60,10 +64,11 @@
   x="year"
   y="yoy_change"
   markers={true}
+  yAxisTitle = "Values are in Million"
   yFmt=".2f"
 />
 
-## YoY Trend – PAT
+## 📈 YoY Trend – PAT
 <div class = 'mb-5'> </div>
 
 <LineChart 
@@ -71,9 +76,11 @@
   x="year"
   y="yoy_change"
   markers={true}
+  yAxisTitle = "Values are in Million"
   yFmt=".2f"
 />
 
+<div class = 'mb-15'> </div>
 
 
 

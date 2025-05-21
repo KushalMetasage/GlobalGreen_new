@@ -10,29 +10,29 @@
 </ButtonGroup>
 </div>
 
-## MoM Revenue Trend
+## 📈 MoM Revenue Trend
 <div class = 'mb-5'></div>
 
 <LineChart 
   data={revenue_trend_mom}
   x=month
   y=mom_change_pct
-  title = "Values are in Million USD ($)"
+  yAxisTitle= "Values are in Million"
   markers=true
 />
 
-## YoY Revenue Trend
+## 📈 YoY Revenue Trend
 <div class = 'mb-5'></div>
 
 <LineChart 
   data={revenue_trend_yoy}
   x=year
   y=yoy_change_pct
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   markers=true
 />
 
-## Revenue & EBITDA %
+## 📈 Revenue & EBITDA %
 <div class = 'mb-5'></div>
 
 <BarChart 
@@ -40,18 +40,17 @@
   x="month"
   y="Revenue"                    
   yFmt="number"                
-  y2="ebitda_pct"              
+  y2="EBITDA_percent"              
   y2SeriesType="line"
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   tooltipTitle="month_label"
   y2AxisLabels={false}
-  yAxisTitle={false}
   y2AxisTitle={false}
 />
 
-## Revenue & EBITDA
+## 📈 Revenue & EBITDA
 <div class = 'mb-5'></div>
 
 <BarChart 
@@ -61,16 +60,15 @@
   yFmt="number"                
   y2="ebitda"              
   y2SeriesType="line"
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   tooltipTitle="month_label"
   y2AxisLabels={false}
-  yAxisTitle={false}
   y2AxisTitle={false}
 />
 
-## Revenue & PBT
+## 📈 Revenue & PBT
 <div class = 'mb-5'></div>
 
 <BarChart 
@@ -80,16 +78,15 @@
   yFmt="number"                
   y2="PBT"              
   y2SeriesType="line"
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   tooltipTitle="month_label"
   y2AxisLabels={false}
-  yAxisTitle={false}
   y2AxisTitle={false}
 />
 
-
+<div class = 'mb-15'> </div>
 
 ```sql date_filter
 SELECT DISTINCT 
@@ -211,7 +208,7 @@ SELECT
   STRPTIME(period_date, '%b-%y') AS month,
   STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
   MAX(CASE WHEN metric = 'Sales Revenue (Incl OI)' THEN period_value END) AS Revenue,
-  MAX(CASE WHEN metric = 'EBITDA %' THEN period_value END) AS ebitda_pct
+  MAX(CASE WHEN metric = 'EBITDA %' THEN period_value END) AS EBITDA_percent
 FROM income_statement
 WHERE 
   entity = CASE '${inputs.matric}'

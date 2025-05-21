@@ -52,15 +52,17 @@
     rowshadowing={true}
     headerFontColor=Bold
     headerColor=#FFD700
-    title = "Values are in Million USD ($)">
+    title = "Values are in Million"
+    >
 
 <Column id = subcategory totalFmt="Total" totalAgg="" subtotalFmt='@value'/>
-<Column id = particulars totalFmt='0 "Line Items"' totalAgg=""/>
+<Column id = particulars totalFmt='0 "Line Items"' totalAgg="" />
 <Column id = current_value title = '{inputs.date_filter.value}' fmt="$0.00" totalAgg="sum" subtotalAgg="sum"/>
 <Column id = next_year_value title = '{inputs.next_year_date.value}' fmt="$0.00" totalAgg="sum" subtotalAgg="sum"/>
 <Column id = variance fmt="$0.00" contentType="delta" totalAgg="sum" subtotalAgg="sum"/>
 </DataTable>
 
+<div class = 'mb-13'> </div>
 
 ```sql balance_data
 WITH current_year AS (

@@ -34,7 +34,7 @@
     rowshadowing={true}
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Net Worth (Shareholders' Funds) – Values are in Million USD ($)">
+    title="Values are in Million">
 
   <Column id="subcategory" totalFmt="Total" totalAgg="" subtotalFmt="@value" />
   <Column id="particulars" totalFmt='0 "Line Items"' totalAgg="" />
@@ -74,7 +74,7 @@
     rowshadowing={true}
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title="Net Worth (Shareholders' Funds) – Values are in Million USD ($)">
+    title="Values are in Million">
 
   <Column id="subcategory" totalFmt="Total" totalAgg="" subtotalFmt="@value" />
   <Column id="particulars" totalFmt='0 "Line Items"' totalAgg="" />
@@ -83,6 +83,8 @@
   <Column id="variance" fmt="$0.00" contentType="delta" totalAgg="sum" subtotalAgg="sum" />
 
 </DataTable>
+
+<div class = 'mb-15'> </div>
 
 
 ```sql date_filter

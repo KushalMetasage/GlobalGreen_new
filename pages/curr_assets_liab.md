@@ -1,5 +1,5 @@
 
-## Current Assets and Liabilities
+## 📦 Current Assets and Liabilities
 
 
 <div class="flex items-center justify-between w-full">
@@ -9,7 +9,7 @@
 </ButtonGroup>
 </div>
 
-## Current Assets
+## 📦 Current Assets
 <div class = 'mb-5'></div>
 
 <LineChart 
@@ -18,12 +18,12 @@
   y="total_current_assets"
   markers={true}
   sort={true}
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   xFmt="mmm-yy"                       
   tooltipTitle="month_label"         
 />
 
-## Current Liabilities
+## 💳 Current Liabilities
 <div class = 'mb-5'></div>
 
 <LineChart 
@@ -31,12 +31,12 @@
   x="month"
   y="total_current_liabilities"
   markers={true}
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
 />
 
-## Trade Payables
+## 📤 Trade Payables
 <div class = 'mb-5'></div>
 
 <LineChart 
@@ -44,34 +44,36 @@
   x="month"                         
   y="value"                        
   markers={true}
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
 />
 
-## DSO
+## 📆 DSO
 <div class = 'mb-5'></div>
 
 <LineChart 
   data={dso}
   y="value"                        
   markers={true}
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
 />
 
-## DPO
+## 📆 DPO
 <div class = 'mb-5'></div>
 
 <LineChart 
   data={dpo}
   y="value"                        
   markers={true}
-  title = "Values are in Million USD ($)"
+  yAxisTitle = "Values are in Million"
   sort={true}
   xFmt="mmm-yy"
 />
+
+<div class = mb-15> </div>
 
 
 ```sql date_filter

@@ -28,22 +28,22 @@
 
 
 <DataTable data={plant} groupType=section rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
-    <Column id="category" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
-    <Column id="CY Actual" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
-    <Column id="CY AOP" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
-    <Column id="LY Actual" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
-    <Column id="Act vs AOP %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
-    <Column id="Growth vs LY %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}"/>
+    <Column id="category" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'Category'/>
+    <Column id="CY Actual" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'CY Actual'/>
+    <Column id="CY AOP" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'CY AOP'/>
+    <Column id="LY Actual" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'LY Actual'/>
+    <Column id="Act vs AOP %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'Actual vs AOP %'/>
+    <Column id="Growth vs LY %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Duna' : 'OBL'}" title = 'Growth vs LY %'/>
 </DataTable >
 
 <div class="mt-25">
 <DataTable data={plant_1} groupType=section rowshadowing={true} headerFontColor=Bold headerColor=#FFD700>
-    <Column id="category" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}"/>
-    <Column id="CY Actual" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}"/>
-    <Column id="CY AOP" totalAgg="weightedMean" fmt='0.00' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" />
-    <Column id="LY Actual" totalAgg="weightedMean" fmt='0.00' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" />
-    <Column id="Act vs AOP %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" />
-    <Column id="Growth vs LY %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" />
+    <Column id="category" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'Category'/>
+    <Column id="CY Actual" totalAgg=sum fmt='0.00' totalFmt='0' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'CY Actual'/>
+    <Column id="CY AOP" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'CY AOP'/>
+    <Column id="LY Actual" totalAgg="weightedMean" fmt='0.00' colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'LY Actual'/>
+    <Column id="Act vs AOP %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'Actual vs AOP %'/>
+    <Column id="Growth vs LY %" totalAgg="weightedMean" fmt='0.00"%"' contentType=delta colGroup="{inputs.matric == 'GGE' ? 'Puszta' : 'VKP'}" title = 'Growth vs LY %'/>
 </DataTable >
 </div>
 
@@ -56,14 +56,19 @@
 
 <div style="text-align: center; margin-bottom: 20px; margin-top: 50px">
   <h2><strong>{inputs.matric === 'GGCL' ? 'Global Green India' : 'Global Green Europe'}</strong></h2>
+  <p class="text-xs text-gray-500 text-center mt-2 italic">
+  * All values represent quantity in <strong>units</strong>.
+</p>
 </div>
+
  
+
 {#if inputs.matric === 'GGCL'}
   <BarChart 
     data={plant_combined_india}
     labels="true"
     labelSize="8"
-    labelFmt="0.00"
+    labelFmt="0"
     yBaseline="true"
     stackTotalLabel="false"
     type="grouped"
@@ -73,13 +78,15 @@
     data={plant_combined_europe}
     labels="true"
     labelSize="8"
-    labelFmt="0.00"
+    labelFmt="0"
     yBaseline="true"
     stackTotalLabel="false"
     type="grouped"
   />
 {/if}
 
+
+<div class = 'mb-15'> </div>
 
 
 

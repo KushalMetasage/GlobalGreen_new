@@ -87,6 +87,8 @@
 <!-- <Column id = variance fmt="$0.00" contentType="delta" totalAgg="sum" subtotalAgg="sum"/> -->
 </DataTable>
 
+<div class = 'mb-15'> </div>
+
 ```sql fixed_assets_data
 WITH current_year AS (
   SELECT

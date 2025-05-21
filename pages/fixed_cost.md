@@ -1,6 +1,6 @@
-<Grid col = 2>
+<Grid col = 3>
 
-## Fixed Cost
+## 🧾 Fixed Cost
 
 <div class = "relative relative mb-5 mt-1">
 <Dropdown data={date_filter} name=date_filter value=date_filter title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
@@ -29,19 +29,19 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title = "Values are in Million USD ($)"
+    title = "Values are in Million"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
 
   <Column 
     id="cy_24_act" 
-    title="CY-24 ACT" 
+    title="CY-24 ACTUAL" 
     fmt="{inputs.matric === 'GGE' ? '€0.00' : '$0.00'}" 
   />
   <Column 
     id="cy_25_act" 
-    title="CY-25 ACT" 
+    title="CY-25 ACTUAL" 
     fmt="{inputs.matric === 'GGE' ? '€0.00' : '$0.00'}" 
   />
   <Column 
@@ -66,11 +66,12 @@
 
 <Grid col = 2>
 
-## Fixed Cost YTD
+## 🧾 Fixed Cost YTD
 
 <div class = "relative relative mb-5 mt-1">
 <Dropdown data={date_filter_ytd} name=date_filter_ytd value=date_filter_ytd title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
+<Info description="Data not available for Jan-25 (Global Green India)" color="red" />
 </div>
 
 
@@ -96,19 +97,19 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title = "Values are in Million USD ($)"
+    title = "Values are in Million"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
 
   <Column 
     id="cy_24_act" 
-    title="CY-24 ACT" 
+    title="CY-24 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
     id="cy_25_act" 
-    title="CY-25 ACT" 
+    title="CY-25 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
@@ -133,7 +134,7 @@
 
 <Grid col = 2>
 
-## Fixed Cost Consolidated
+## 🧾 Fixed Cost Consolidated
 
 <div class = "relative relative mb-5 mt-1">
 <Dropdown data={date_filter_cons} name=date_filter_cons value=date_filter_cons title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
@@ -155,19 +156,19 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title = "Values are in Million USD ($)"
+    title = "Values are in Million"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
 
   <Column 
     id="cy_24_act" 
-    title="CY-24 ACT" 
+    title="CY-24 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
     id="cy_25_act" 
-    title="CY-25 ACT" 
+    title="CY-25 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
@@ -192,11 +193,12 @@
 
 <Grid col = 2>
 
-## Fixed Cost Consolidated YTD
+## 🧾 Fixed Cost Consolidated YTD
 
 <div class = "relative relative mb-5 mt-1">
 <Dropdown data={date_filter_ytd_cons} name=date_filter_ytd_cons value=date_filter_ytd_cons title="Month" defaultValue="Jan-25" order = 'date_sort desc'>
 </Dropdown>
+<Info description="Data not available for Jan-25" color="red" />
 </div>
 
 </Grid>
@@ -214,19 +216,19 @@
     totalLabel="Total"
     headerFontColor="Bold"
     headerColor="#FFD700"
-    title = "Values are in Million USD ($)"
+    title = "Values are in Million"
     rows={20}>
 
   <Column id="metric" totalAgg="" />
 
   <Column 
     id="cy_24_act" 
-    title="CY-24 ACT" 
+    title="CY-24 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
     id="cy_25_act" 
-    title="CY-25 ACT" 
+    title="CY-25 ACTUAL" 
     fmt="$0.00" 
   />
   <Column 
@@ -248,6 +250,8 @@
   />
 
 </DataTable>
+
+<div class = 'mb-15'> </div>
 
 ```sql date_filter
 SELECT 
