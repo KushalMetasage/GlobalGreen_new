@@ -92,6 +92,7 @@
 <div class = "mb-15"></div>
 <BarChart 
     data={cons_inc_chart}
+    yAxisTitle = "Values are in Million"
     type = grouped
 />
 
@@ -171,6 +172,7 @@ defaultValue="December" order="month_num">
 <div class = "mb-15"></div>
 <BarChart 
     data={cons_ytd_inc}
+    yAxisTitle = "Values are in Million"
     type = grouped
 />
 
