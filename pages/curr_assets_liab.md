@@ -68,6 +68,7 @@
   data={dpo}
   y="value"                        
   markers={true}
+  title = "Values are in Million USD ($)"
   sort={true}
   xFmt="mmm-yy"
 />
@@ -199,7 +200,13 @@ SELECT
     WHEN 'GGE' THEN gge
   END AS value
 FROM financial_bs
-WHERE Particulars = 'DSO'
+WHERE 
+  Particulars = 'DSO'
+  AND CASE '${inputs.matric}'
+    WHEN 'GGCL' THEN ggcl
+    WHEN 'GGE' THEN gge
+  END != 0
+
 ```
 
 ```sql dpo
@@ -212,5 +219,11 @@ SELECT
     WHEN 'GGE' THEN gge
   END AS value
 FROM financial_bs
-WHERE Particulars = 'DPO'
+WHERE 
+  Particulars = 'DPO'
+  AND CASE '${inputs.matric}'
+    WHEN 'GGCL' THEN ggcl
+    WHEN 'GGE' THEN gge
+  END != 0
+
 ```
