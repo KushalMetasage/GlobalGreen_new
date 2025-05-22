@@ -8,16 +8,14 @@
 </ButtonGroup>
 
 <div class="bg-gray-800 text-white p-6 shadow-lg rounded-lg mb-10">
+  <!-- Display Comments Dynamically -->
+  <Details title='Cash Flow Commentary' open={true}>
+    {#each cashflow_comments as comment}
+      <p class="text-gray-300 text-sm">{comment.comments}</p>
+    {/each}
+  </Details>
+</div>
 
-        <!-- Display Comments Dynamically -->
-        <Details title='Cash Flow Commentary' open = true>
-            {#each comm as comment}
-                <p class="text-gray-300 text-sm">
-                    {inputs.matric === "GGCL" ? comment.global_green_india : comment.global_green_europe}
-                </p>
-            {/each}
-        </Details>
-    </div>
 
 <DataTable data = {cash_flow} rowshadowing={true} headerFontColor=Bold headerColor=#FFD700 title="Values are in Million">
 <Column id = 'Particulars'/>
@@ -57,94 +55,17 @@ GROUP BY
     company_name, particular
 ```
 
-<!-- ```sql date_pie
+
+```sql cashflow_comments
 SELECT 
-  company_name,
-  particular,
-  period_date,
-  CAST(NULLIF(TRIM(period_value), '') AS DECIMAL(10,2)) AS value
+  entity,
+  comments
 FROM 
-  cashflow
+  balance_sheet_new_comments
 WHERE 
-  company_name = CASE '${inputs.matric}'
+  particulars = 'Cashflow Comments'
+  AND entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.period_button}'
-ORDER BY 
-  particular
-
-``` -->
-
-```sql comm
-SELECT DISTINCT global_green_india, global_green_europe 
-FROM cashflow_comments
 ```
-
-<!--
-```sql pie_query
-SELECT 
-  particular AS pie,
-  MAX(CAST(NULLIF(TRIM(period_value), '') AS DECIMAL(10,2))) AS count
-FROM 
-  cashflow
-WHERE 
-  company_name = CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN 'Global Green India'
-    WHEN 'GGE' THEN 'Global Green Europe'
-  END
-  AND period_date = '${inputs.period_button}'
-GROUP BY 
-  particular
-```
-
-```sql pie_data
-SELECT 
-  pie AS name, 
-  count AS raw_value,
-  ABS(count) AS value  -- use absolute value for pie chart size
-FROM ${pie_query}
-```
-
-<ECharts config={{
-  title: {
-    text: `Cash Flow - ${inputs.period_button} (${inputs.matric === 'GGCL' ? 'India' : 'Europe'})`,
-    left: 'center',
-    top: 10, // position title 10px from top
-    textStyle: {
-      fontSize: 16,
-      fontWeight: 'bold'
-    }
-  },
-  tooltip: {
-    formatter: (params) => {
-      const { name, data } = params;
-      return `${name}: ${data.raw_value} (${params.percent}%)`;
-    }
-  },
-  series: [
-    {
-      type: 'pie',
-      data: [...pie_data],
-      encode: {
-        value: 'value',
-        tooltip: ['raw_value']
-      },
-      radius: '60%', // optional: size of pie
-      center: ['50%', '60%'], // shift chart down to create margin
-      label: {
-        show: true,
-        formatter: '{b}',
-        overflow: 'break',
-        minAngle: 2
-      },
-      labelLine: {
-        length: 15,
-        length2: 10
-      }
-    }
-  ]
-}} />
-
--->
-

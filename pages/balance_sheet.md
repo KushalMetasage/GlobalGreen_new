@@ -31,17 +31,14 @@
 
 
 <div class="bg-gray-800 text-white p-6 shadow-lg rounded-lg mb-10">
-    <!-- Display Comments Dynamically -->
-    <Details title='Balance Sheet Commentary' open = true>
-        {#each comm as comment}
-            {#if inputs.matric === "GGE"}  <!-- Match with ButtonGroupItem value -->
-                <p class="text-gray-300 text-sm">{comment.global_green_europe}</p>
-            {:else}
-                <p class="text-gray-300 text-sm">{comment.global_green_india}</p>
-            {/if}
-        {/each}
-    </Details>
+  <Details title='Balance Sheet Commentary' open={true}>
+    {#each balance_sheet_commentary as row}
+      <p class="text-gray-300 text-sm">{row.comments}</p>
+    {/each}
+  </Details>
 </div>
+
+
 
 
 
@@ -201,14 +198,23 @@ GROUP BY ALL
 
 ```
 
-```sql comm
-SELECT DISTINCT global_green_india, global_green_europe 
-FROM balance_sheet_comments
-```
-
 ```sql max_date
 SELECT 
     STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date
 FROM 
     balance_sheet;
+```
+
+```sql balance_sheet_commentary
+SELECT 
+  entity,
+  comments
+FROM 
+  balance_sheet_new_comments
+WHERE 
+  particulars = 'Balance Sheet Comments'
+  AND entity = CASE '${inputs.matric}'
+    WHEN 'GGCL' THEN 'Global Green India'
+    WHEN 'GGE' THEN 'Global Green Europe'
+  END
 ```

@@ -1,1 +1,0 @@
-SELECT * FROM mmr.financial_bs;

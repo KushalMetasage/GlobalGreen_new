@@ -195,52 +195,81 @@ ORDER BY entity, date_sort;
 
 ```sql trade_payables
 SELECT
-  STRPTIME(Date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
+  STRPTIME(period_date, '%b-%y') AS month,
+  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
   'Trade Payables' AS Particulars,
-  ROUND(CAST(CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN ggcl
-    WHEN 'GGE' THEN gge
+  ROUND(CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
   END AS DOUBLE), 0) AS value
-FROM financial_bs
-WHERE Particulars = 'Trade Payables'
+FROM income_statement
+WHERE 
+  metric = 'Trade Payables'
+  AND CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
+  END AS DOUBLE) IS NOT NULL
 ```
 
 ```sql dso
 SELECT
-  STRPTIME(Date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
-  'Trade Payables' AS Particulars,
-  ROUND(CAST(CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN ggcl
-    WHEN 'GGE' THEN gge
+  STRPTIME(period_date, '%b-%y') AS month,
+  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+  'DSO' AS Particulars,
+  ROUND(CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
   END AS DOUBLE), 0) AS value
-FROM financial_bs
+FROM income_statement
 WHERE 
-  Particulars = 'DSO'
-  AND CAST(CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN ggcl
-    WHEN 'GGE' THEN gge
+  metric = 'DSO'
+  AND CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
   END AS DOUBLE) != 0
 
 ```
 
 ```sql dpo
 SELECT
-  STRPTIME(Date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(Date, '%b-%y'), '%b-%y') AS month_label,
-  'Trade Payables' AS Particulars,
-  ROUND(CAST(CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN ggcl
-    WHEN 'GGE' THEN gge
+  STRPTIME(period_date, '%b-%y') AS month,
+  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+  'DPO' AS Particulars,
+  ROUND(CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
   END AS DOUBLE), 0) AS value
-FROM financial_bs
+FROM income_statement
 WHERE 
-  Particulars = 'DPO'
-  AND CAST(CASE '${inputs.matric}'
-    WHEN 'GGCL' THEN ggcl
-    WHEN 'GGE' THEN gge
+  metric = 'DPO'
+  AND CAST(CASE 
+    WHEN entity = CASE '${inputs.matric}'
+      WHEN 'GGCL' THEN 'Global Green India'
+      WHEN 'GGE' THEN 'Global Green Europe'
+    END 
+    THEN period_value
+    ELSE NULL
   END AS DOUBLE) != 0
 
-
 ```
+
