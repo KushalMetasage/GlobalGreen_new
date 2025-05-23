@@ -110,7 +110,7 @@
 
 <div class="relative mt-1">
 <Dropdown data={month_filter_ytd} name=month_filter_ytd value=month_filter_ytd title="Month" 
-defaultValue="December" order="month_num">
+defaultValue="January" order="month_num">
 </Dropdown>
 
 </div>
@@ -188,7 +188,7 @@ defaultValue="December" order="month_num">
 
 <div class="relative mt-1">
 <Dropdown data={month_filter_ytd_cons} name=month_filter_ytd_cons value=month_filter_ytd_cons title="Month" 
-defaultValue="December" order="month_num">
+defaultValue="January" order="month_num">
 </Dropdown>
 </div>
 
@@ -246,7 +246,7 @@ WITH metric_order AS (
         entity = 'Global Green India'  -- consistent reference for ordering
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
     GROUP BY metric
 ),
 base AS (
@@ -264,7 +264,7 @@ base AS (
         END
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
 ),
 cy AS (
     SELECT *
@@ -431,12 +431,13 @@ WITH metric_order AS (
         ROW_NUMBER() OVER (ORDER BY MIN(STRPTIME(period_date, '%b-%y'))) AS sort_order
     FROM income_statement
     WHERE 
-        entity = 'Global Green India'
+        entity = 'Global Green India'  -- consistent reference for ordering
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
     GROUP BY metric
 ),
+
 base AS (
     SELECT 
         metric,
@@ -450,6 +451,7 @@ base AS (
         AND TRIM(metric) <> ''
         AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
 ),
+
 cy AS (
     SELECT *
     FROM base
@@ -457,6 +459,7 @@ cy AS (
         metric_type IN ('Actual', 'AOP')
         AND period_date = '${inputs.date_cons.value}'
 ),
+
 ly AS (
     SELECT 
         metric,
@@ -466,17 +469,15 @@ ly AS (
     WHERE metric_type = 'Actual'
     GROUP BY metric, STRPTIME(period_date, '%b-%y')
 ),
+
 pivoted AS (
     SELECT 
         cy.metric,
         cy.period_date,
-
         SUM(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) AS cy_aop,
         SUM(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) AS cy_actual,
         COALESCE(ly.ly_value, 0) AS ly_actual
-
-    FROM 
-        cy
+    FROM cy
     LEFT JOIN ly 
         ON cy.metric = ly.metric
         AND date_add(STRPTIME(cy.period_date, '%b-%y'), INTERVAL '-1 year') = ly.ly_date
@@ -497,6 +498,8 @@ FROM
 LEFT JOIN metric_order m ON p.metric = m.metric
 ORDER BY 
     m.sort_order;
+
+
 ```
 
 ```sql consolidated_perc
@@ -717,11 +720,15 @@ WITH month_lookup AS (
         (12, 'December')
     ) AS m(month_num, month_name)
 )
+
 SELECT 
     month_name AS month_filter_ytd,
     month_name AS label,
     month_num
 FROM month_lookup
+WHERE 
+    '${inputs.date_filter_ytd.value}' != '2025'
+    OR month_name = 'January'
 ORDER BY month_num;
 
 ```
@@ -736,14 +743,13 @@ WITH metric_order AS (
         entity = 'Global Green India'
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
     GROUP BY metric
 ),
 ytd_window AS (
     SELECT 
         '${inputs.date_filter_ytd.value}'::INT AS ytd_year,
 
-        -- Map month name to month number
         CASE 
             WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
             WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
@@ -760,14 +766,12 @@ ytd_window AS (
             ELSE 12
         END AS ytd_month,
 
-        -- Start of current YTD
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019' 
                 THEN STRPTIME('Apr-19', '%b-%y')
             ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd.value}', '%d-%m-%Y')
         END AS start_date,
 
-        -- End of current YTD
         (
             STRPTIME(
                 CASE 
@@ -810,14 +814,12 @@ ytd_window AS (
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS end_date,
 
-        -- Start of LY YTD
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019' 
                 THEN STRPTIME('Apr-18', '%b-%y')
             ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd.value}::INT - 1), '%d-%m-%Y')
         END AS ly_start_date,
 
-        -- End of LY YTD
         (
             STRPTIME(
                 '01-' || LPAD(CAST(
@@ -851,7 +853,7 @@ base AS (
     WHERE 
         TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
         AND entity = CASE COALESCE('${inputs.matric_ytd}', 'GGCL')
             WHEN 'GGCL' THEN 'Global Green India'
             WHEN 'GGE' THEN 'Global Green Europe'
@@ -903,12 +905,16 @@ SELECT
 FROM aggregated a
 LEFT JOIN metric_order m ON a.metric = m.metric
 WHERE 
-    a."YTD Actual" <> 0
-    OR a."YTD AOP" <> 0
-    OR a."LY Actual YTD" <> 0
-    OR a."YTD Actual" - a."YTD AOP" <> 0
-    OR a."YTD Actual" - a."LY Actual YTD" <> 0
+    a.metric NOT IN ('DSO', 'DPO') -- defensive double filter
+    AND (
+        a."YTD Actual" <> 0
+        OR a."YTD AOP" <> 0
+        OR a."LY Actual YTD" <> 0
+        OR a."YTD Actual" - a."YTD AOP" <> 0
+        OR a."YTD Actual" - a."LY Actual YTD" <> 0
+    )
 ORDER BY m.sort_order;
+
 
 
 ```
@@ -1130,7 +1136,8 @@ ORDER BY m.sort_order;
 SELECT 
     STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_ytd_income
 FROM 
-    income_statement;
+    income_statement
+WHERE period_date != 'Feb-25';
 ```
 
 ```sql date_filter_ytd_cons
@@ -1229,6 +1236,9 @@ SELECT
     month_name AS label,
     month_num
 FROM month_lookup
+WHERE 
+    '${inputs.date_filter_ytd.value}' != '2025'
+    OR month_name = 'January'
 ORDER BY month_num;
 
 ```
@@ -1243,7 +1253,7 @@ WITH metric_order AS (
         entity = 'Global Green India'
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
     GROUP BY metric
 ),
 ytd_window AS (
@@ -1358,7 +1368,7 @@ base AS (
         entity IN ('Global Green India', 'Global Green Europe')
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
 ),
 filtered AS (
     SELECT 
@@ -1609,7 +1619,8 @@ ORDER BY m.sort_order;
 SELECT 
     STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_ytd_cons
 FROM 
-    income_statement;
+    income_statement
+WHERE period_date != 'Feb-25';
 ```
 
 ```sql cons_inc_chart
@@ -1716,4 +1727,92 @@ SELECT '${inputs.date_filter.value}' AS Selected_Date;
 
 ```sql selected_year_ytd
 SELECT '${inputs.date_filter_ytd.value}' AS Selected_year
+```
+
+```sql sequence
+WITH metric_order AS (
+    SELECT 
+        metric,
+        CASE metric
+            WHEN 'Sales Revenue (Incl OI)' THEN 1
+            WHEN 'Variable Cost' THEN 2
+            WHEN 'Gross Margin' THEN 3
+            WHEN 'Fixed Cost' THEN 4
+            WHEN 'EBITDA' THEN 5
+            WHEN 'Depreciation' THEN 6
+            WHEN 'EBIT' THEN 7
+            WHEN 'Interest Expenses' THEN 8
+            WHEN 'EBT' THEN 9
+            WHEN 'Other Income (Income)/Expense' THEN 10
+            WHEN 'FX Unrealised (Gain)/loss' THEN 11
+            WHEN 'PBT Before Exceptional Profit / (Loss)' THEN 12
+            WHEN 'Tax Provisions' THEN 13
+            WHEN 'PBT - (from operations)' THEN 14 -- This is mapped from PAT in the visual
+            ELSE 999
+        END AS sort_order
+    FROM income_statement
+    WHERE 
+        entity = 'Global Green India'
+        AND TRIM(metric) IS NOT NULL
+        AND TRIM(metric) <> ''
+),
+base AS (
+    SELECT 
+        metric,
+        metric_type,
+        period_date,
+        period_value
+    FROM income_statement
+    WHERE 
+        entity IN ('Global Green India', 'Global Green Europe')
+        AND TRIM(metric) IS NOT NULL
+        AND TRIM(metric) <> ''
+),
+cy AS (
+    SELECT *
+    FROM base
+    WHERE 
+        metric_type IN ('Actual', 'AOP')
+        AND period_date = '${inputs.date_cons.value}'
+),
+ly AS (
+    SELECT 
+        metric,
+        STRPTIME(period_date, '%b-%y') AS ly_date,
+        SUM(period_value) AS ly_value
+    FROM base
+    WHERE metric_type = 'Actual'
+    GROUP BY metric, STRPTIME(period_date, '%b-%y')
+),
+pivoted AS (
+    SELECT 
+        cy.metric,
+        cy.period_date,
+
+        SUM(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) AS cy_aop,
+        SUM(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) AS cy_actual,
+        COALESCE(ly.ly_value, 0) AS ly_actual
+
+    FROM 
+        cy
+    LEFT JOIN ly 
+        ON cy.metric = ly.metric
+        AND date_add(STRPTIME(cy.period_date, '%b-%y'), INTERVAL '-1 year') = ly.ly_date
+    GROUP BY 
+        cy.metric, cy.period_date, ly.ly_value
+)
+
+SELECT 
+    p.metric,
+    p.period_date,
+    p.cy_aop AS "CY AOP",
+    p.cy_actual AS "CY Actual",
+    p.ly_actual AS "LY Actual",
+    p.cy_actual - p.cy_aop AS "Variance vs AOP",
+    p.cy_actual - p.ly_actual AS "Variance vs LY"
+FROM 
+    pivoted p
+LEFT JOIN metric_order m ON p.metric = m.metric
+ORDER BY 
+    m.sort_order;
 ```

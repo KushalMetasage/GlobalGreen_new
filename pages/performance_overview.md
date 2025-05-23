@@ -7,77 +7,49 @@
 </ButtonGroup>
 </div>
 
-## 📈 MoM Trend – EBITDA
-<div class = 'mb-5'> </div>
 
-<LineChart 
-  data={overview_EBITDA}
-  x="month"
-  y="mom_change"
-  yFmt=".2f" 
-  yAxisTitle = "Values are in Million"
-  series="metric"
-  markers={true}
-/>
+## 📈 YoY Trend - EBITDA
 
-## 📈 MoM Trend – PBT
-<div class = 'mb-5'> </div>
-
-<LineChart 
-  data={overview_PBT}
-  x="month"
-  y="mom_change"
-  yAxisTitle = "Values are in Million"
-  series="metric"
-  markers={true}
-/>
-
-## 📈 MoM Trend – PAT
-<div class = 'mb-5'> </div>
-
-<LineChart 
-  data={overview_PAT}
-  x="month"
-  y="mom_change"
-  yAxisTitle = "Values are in Million"
-  series="metric"
-  markers={true}
-/>
-
-## 📈 YoY Trend – EBITDA
 <div class = 'mb-5'> </div>
 
 <LineChart 
   data={overview_EBITDA_yoy}
   x="year"
-  y="yoy_change"
+  y="current_year_value"
+  y2="yoy_change"
+  yAxisTitle="Values are in million"
+  y2AxisTitle="YoY Change (%)"
   markers={true}
-  yFmt=".2f"
-  yAxisTitle = "Values are in Million"
 />
 
-## 📈 YoY Trend – PBT
-<div class = 'mb-5'> </div>
+<div class = 'mb-15'> </div>
+
+## 📈 YoY Trend - PBT
 
 <LineChart 
   data={overview_PBT_yoy}
   x="year"
-  y="yoy_change"
+  y="current_year_value"
+  y2 = "yoy_change"
   markers={true}
   yAxisTitle = "Values are in Million"
+  y2AxisTitle = "YoY Change (%)"
   yFmt=".2f"
 />
 
-## 📈 YoY Trend – PAT
-<div class = 'mb-5'> </div>
+## 📈 YoY Trend - PAT
 
 <LineChart 
   data={overview_PAT_yoy}
   x="year"
-  y="yoy_change"
+  y="current_year_value"
+  y2 = "yoy_change"
+  yAxisTitle = "Values are in Million"
+  y2AxisTitle = "YoY Change (%)"
   markers={true}
   yFmt=".2f"
 />
+
 
 <div class = 'mb-15'> </div>
 

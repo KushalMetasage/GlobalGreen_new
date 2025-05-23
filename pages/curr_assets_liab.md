@@ -7,52 +7,71 @@
 </ButtonGroup>
 </div>
 
+<Grid cols = 2>
+
 ## 💵 Current Assets and Liabilities
+
+<Dropdown data={date_filter_bs} name=date_filter_bs value=date_filter_bs title="Year" defaultValue="2024" order = 'date_sort desc'>
+</Dropdown>
+
+</Grid>
 
 <div class = 'mb-5'> </div>
 
 <Grid cols = 2>
 
 <LineChart 
-  data={curr_assets}
-  x="month"                           
+  data={sel_year_curr_assets}
+  x="month_label"                            
   y="total_current_assets"
   markers={true}
   sort={true}
-  title = 'Current Assets'
-  yAxisTitle = "Values are in Million"
-  xFmt="mmm-yy"                       
-  tooltipTitle="month_label" 
-  yFmt="0"        
+  title="Current Assets"
+  yAxisTitle="Values are in Million"
+  xFmt="mmm-yy"
+  tooltipTitle="month_label"
+  yFmt="0"
 />
 
 
 <LineChart 
-  data={curr_liab}
-  x="month"
+  data={sel_year_curr_liab}
+  x="month_label"
   y="total_current_liabilities"
   markers={true}
-  title = 'Current Liabilities'
-  yAxisTitle = "Values are in Million"
+  title="Current Liabilities"
+  yAxisTitle="Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   yFmt="0"
 />
 
+
+
 </Grid>
 
+<Grid cols = 2>
+
 ## 📦 Efficiency Metrics
+
+
+<Dropdown data={date_filter_inc} name=date_filter_inc value=date_filter_inc title="Year" defaultValue="2024" order = 'date_sort desc'>
+</Dropdown>
+
+
+</Grid>
 
 <div class = 'mb-5'> </div>
 
 <Grid cols = 2>
 
 <LineChart 
-  data={dso}
-  y="value"                        
+  data={sel_year_dso}
+  x="month_label"                    
+  y="dso"                            
   markers={true}
-  yAxisTitle = "Values are in Million"
-  title = 'DSO'
+  yAxisTitle="DSO"
+  title="DSO"
   sort={true}
   xFmt="mmm-yy"
   yFmt="0"
@@ -60,17 +79,19 @@
   tooltipFmt="0" 
 />
 
-
 <LineChart 
-  data={dpo}
-  y="value"                        
+  data={sel_year_dpo}
+  x="month_label"
+  y="dpo"
   markers={true}
-  title = 'DPO'
-  yAxisTitle = "Values are in Million"
+  title="DPO"
+  yAxisTitle="Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   yFmt="0"
+  tooltipTitle="month_label"
 />
+
 
 </Grid>
 
@@ -78,46 +99,302 @@
 <div class = 'mb-5'></div>
 
 <LineChart 
-  data={trade_payables}
-  x="month"                         
-  y="value"                        
+  data={sel_year_trade_payable}
+  x="month_label"                          
+  y="trade_payables"                       
   markers={true}
-  yAxisTitle = "Values are in Million"
+  yAxisTitle="Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   yFmt="0"
+  tooltipTitle="month_label"
 />
+
 
 <div class = mb-15> </div>
 
 
-```sql date_filter
+```sql date_filter_inc
+WITH month_lookup AS (
+    SELECT * FROM (VALUES
+        (1,  'January'),
+        (2,  'February'),
+        (3,  'March'),
+        (4,  'April'),
+        (5,  'May'),
+        (6,  'June'),
+        (7,  'July'),
+        (8,  'August'),
+        (9,  'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December')
+    ) AS m(month_num, month_name)
+),
+
+parsed_dates AS (
+    SELECT 
+        STRPTIME(period_date, '%b-%y') AS parsed_date
+    FROM income_statement
+    WHERE TRIM(period_date) IS NOT NULL
+),
+
+calendar_years AS (
+    SELECT 
+        CASE 
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN '2019'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2020 THEN '2020'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2021 THEN '2021'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2022 THEN '2022'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2023 THEN '2023'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2024 THEN '2024'
+        END AS date_filter_inc,
+
+        CASE 
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
+            ELSE DATE_TRUNC('year', parsed_date)
+        END AS date_sort,
+
+        EXTRACT(MONTH FROM parsed_date) AS month_num,
+        STRFTIME(parsed_date, '%b-%y') AS month_label
+    FROM parsed_dates
+),
+
+calendar_labels AS (
+    SELECT DISTINCT
+        date_filter_inc,
+        date_sort,
+        month_num,
+        month_label
+    FROM calendar_years
+    WHERE date_filter_inc IS NOT NULL
+),
+
+aggregated_calendar AS (
+    SELECT 
+        date_filter_inc,
+        date_sort,
+        STRING_AGG(month_label ORDER BY month_num) AS months_included
+    FROM calendar_labels
+    GROUP BY date_filter_inc, date_sort
+)
+
 SELECT 
-  STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%Y-%m') AS date_filter,
-  STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%b-%y') AS label,
-  STRPTIME(bs.period_date, '%b-%y') AS date_sort
-FROM balance_sheet bs
-GROUP BY date_filter, label,period_date
-ORDER BY date_sort ASC;
+    date_filter_inc,
+    date_sort,
+    months_included
+FROM 
+    aggregated_calendar
+ORDER BY 
+    date_sort DESC;
 ```
 
+```sql date_filter_bs
+WITH month_lookup AS (
+    SELECT * FROM (VALUES
+        (1,  'January'),
+        (2,  'February'),
+        (3,  'March'),
+        (4,  'April'),
+        (5,  'May'),
+        (6,  'June'),
+        (7,  'July'),
+        (8,  'August'),
+        (9,  'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December')
+    ) AS m(month_num, month_name)
+),
 
-```sql curr_assets
+parsed_dates AS (
+    SELECT 
+        STRPTIME(period_date, '%b-%y') AS parsed_date
+    FROM balance_sheet
+    WHERE TRIM(period_date) IS NOT NULL
+),
+
+calendar_years AS (
+    SELECT 
+        CASE 
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN '2019'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2020 THEN '2020'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2021 THEN '2021'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2022 THEN '2022'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2023 THEN '2023'
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2024 THEN '2024'
+        END AS date_filter_bs,
+
+        CASE 
+            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
+            ELSE DATE_TRUNC('year', parsed_date)
+        END AS date_sort,
+
+        EXTRACT(MONTH FROM parsed_date) AS month_num,
+        STRFTIME(parsed_date, '%b-%y') AS month_label
+    FROM parsed_dates
+),
+
+calendar_labels AS (
+    SELECT DISTINCT
+        date_filter_bs,
+        date_sort,
+        month_num,
+        month_label
+    FROM calendar_years
+    WHERE date_filter_bs IS NOT NULL
+),
+
+aggregated_calendar AS (
+    SELECT 
+        date_filter_bs,
+        date_sort,
+        STRING_AGG(month_label ORDER BY month_num) AS months_included
+    FROM calendar_labels
+    GROUP BY date_filter_bs, date_sort
+)
+
+SELECT 
+    date_filter_bs,
+    date_sort,
+    months_included
+FROM 
+    aggregated_calendar
+ORDER BY 
+    date_sort DESC;
+```
+
+```sql sel_year_trade_payable
+WITH base AS (
+    SELECT 
+        entity,
+        STRPTIME(period_date, '%b-%y') AS parsed_date,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        period_value AS trade_payables
+    FROM income_statement
+    WHERE 
+        metric = 'Trade Payables'
+        AND entity = CASE '${inputs.matric}'
+            WHEN 'GGCL' THEN 'Global Green India'
+            WHEN 'GGE' THEN 'Global Green Europe'
+        END
+),
+
+filtered AS (
+    SELECT 
+        month_label,
+        CAST(month_num AS INTEGER) AS month_sort,
+        ROUND(SUM(trade_payables), 0) AS trade_payables
+    FROM base
+    WHERE year = '${inputs.date_filter_inc.value}'
+    GROUP BY month_label, month_sort
+)
+
+SELECT 
+    month_label,
+    month_sort,
+    'Trade Payables' AS Particulars,
+    trade_payables
+FROM filtered
+ORDER BY month_sort;
+```
+
+```sql sel_year_dso
+WITH base AS (
+    SELECT 
+        entity,
+        STRPTIME(period_date, '%b-%y') AS parsed_date,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        period_value AS dso
+    FROM income_statement
+    WHERE 
+        metric = 'DSO'
+        AND entity = CASE '${inputs.matric}'
+            WHEN 'GGCL' THEN 'Global Green India'
+            WHEN 'GGE' THEN 'Global Green Europe'
+        END
+),
+
+filtered AS (
+    SELECT 
+        month_label,
+        CAST(month_num AS INTEGER) AS month_sort,
+        ROUND(SUM(dso), 0) AS dso
+    FROM base
+    WHERE year = '${inputs.date_filter_inc.value}'
+    GROUP BY month_label, month_sort
+    HAVING ROUND(SUM(dso), 0) != 0  
+)
+
+SELECT 
+    month_label,
+    month_sort,
+    'DSO' AS Particulars,
+    dso
+FROM filtered
+ORDER BY month_sort;
+
+```
+
+```sql sel_year_dpo
+WITH base AS (
+    SELECT 
+        entity,
+        STRPTIME(period_date, '%b-%y') AS parsed_date,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
+        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        period_value AS dpo
+    FROM income_statement
+    WHERE 
+        metric = 'DPO'
+        AND entity = CASE '${inputs.matric}'
+            WHEN 'GGCL' THEN 'Global Green India'
+            WHEN 'GGE' THEN 'Global Green Europe'
+        END
+),
+
+filtered AS (
+    SELECT 
+        month_label,
+        CAST(month_num AS INTEGER) AS month_sort,
+        ROUND(SUM(dpo), 0) AS dpo
+    FROM base
+    WHERE year = '${inputs.date_filter_inc.value}'
+    GROUP BY month_label, month_sort
+    HAVING ROUND(SUM(dpo), 0) != 0
+)
+
+SELECT 
+    month_label,
+    month_sort,
+    'DPO' AS Particulars,
+    dpo
+FROM filtered
+ORDER BY month_sort;
+```
+```sql sel_year_curr_assets
 WITH base AS (
   SELECT
     bs.entity,
     bs.sub_category AS subcategory,
     bs.particulars,
-    STRPTIME(bs.period_date, '%b-%y') AS month,                                
-    STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%b-%y') AS month_label,       
+    STRPTIME(bs.period_date, '%b-%y') AS month,
+    STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%Y') AS year,
+    STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%b-%y') AS month_label,
     SUM(bs.period_value) AS current_value
   FROM balance_sheet bs
   WHERE bs.entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  GROUP BY bs.entity, bs.sub_category, bs.particulars, month, month_label
+  GROUP BY bs.entity, bs.sub_category, bs.particulars, month, year, month_label
 ),
+
 grouped AS (
   SELECT *,
     CASE 
@@ -129,8 +406,13 @@ grouped AS (
     END AS subcategory_group
   FROM base
 ),
+
 filtered AS (
-  SELECT * FROM grouped WHERE subcategory_group = 'Current Assets'
+  SELECT *
+  FROM grouped
+  WHERE 
+    subcategory_group = 'Current Assets'
+    AND year = '${inputs.date_filter_bs.value}'
 )
 
 SELECT
@@ -141,18 +423,15 @@ SELECT
 FROM filtered
 GROUP BY entity, month, month_label
 ORDER BY entity, month;
-
-
 ```
 
-```sql curr_liab
-
+```sql sel_year_curr_liab
 WITH current_year AS (
   SELECT
     bs.entity,
     bs.sub_category AS subcategory,
     bs.particulars,
-    STRPTIME(bs.period_date, '%b-%y') AS month,                                 
+    STRPTIME(bs.period_date, '%b-%y') AS month,
     STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%Y') AS year_value,
     STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%m') AS month_number,
     STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%b-%y') AS month_label,
@@ -165,6 +444,7 @@ WITH current_year AS (
   END
   GROUP BY bs.entity, bs.sub_category, bs.particulars, month, year_value, month_number, month_label, date_sort
 ),
+
 grouped AS (
   SELECT *,
     CASE 
@@ -176,8 +456,13 @@ grouped AS (
     END AS subcategory_group
   FROM current_year
 ),
+
 filtered AS (
-  SELECT * FROM grouped WHERE subcategory_group = 'Current Liabilities'
+  SELECT *
+  FROM grouped
+  WHERE 
+    subcategory_group = 'Current Liabilities'
+    AND year_value = '${inputs.date_filter_bs.value}'
 )
 
 SELECT
@@ -190,86 +475,4 @@ SELECT
 FROM filtered
 GROUP BY entity, year_value, month, month_label, date_sort
 ORDER BY entity, date_sort;
-
 ```
-
-```sql trade_payables
-SELECT
-  STRPTIME(period_date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
-  'Trade Payables' AS Particulars,
-  ROUND(CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE), 0) AS value
-FROM income_statement
-WHERE 
-  metric = 'Trade Payables'
-  AND CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE) IS NOT NULL
-```
-
-```sql dso
-SELECT
-  STRPTIME(period_date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
-  'DSO' AS Particulars,
-  ROUND(CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE), 0) AS value
-FROM income_statement
-WHERE 
-  metric = 'DSO'
-  AND CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE) != 0
-
-```
-
-```sql dpo
-SELECT
-  STRPTIME(period_date, '%b-%y') AS month,
-  STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
-  'DPO' AS Particulars,
-  ROUND(CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE), 0) AS value
-FROM income_statement
-WHERE 
-  metric = 'DPO'
-  AND CAST(CASE 
-    WHEN entity = CASE '${inputs.matric}'
-      WHEN 'GGCL' THEN 'Global Green India'
-      WHEN 'GGE' THEN 'Global Green Europe'
-    END 
-    THEN period_value
-    ELSE NULL
-  END AS DOUBLE) != 0
-
-```
-
