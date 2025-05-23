@@ -71,7 +71,7 @@
   y="dso"                            
   markers={true}
   yAxisTitle="DSO"
-  title="DSO"
+  title="Values are in Million"
   sort={true}
   xFmt="mmm-yy"
   yFmt="0"
