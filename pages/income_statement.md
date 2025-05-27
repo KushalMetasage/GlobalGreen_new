@@ -225,25 +225,24 @@ defaultValue="January" order="month_num">
 
 ```sql date_filter
 SELECT DISTINCT 
-  period_date AS date_filter,
-  STRPTIME(period_date, '%b-%y') AS date_sort
+  STRFTIME(date_my, '%b-%y') AS date_filter,
+  STRFTIME(date_my, '%b-%y') AS label,
+  date_my AS date_sort  
 FROM income_statement
 WHERE 
-  TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
-  AND period_date != 'Feb-25'  
+  date_my IS NOT NULL
+  AND STRFTIME(date_my, '%b-%y') != 'Feb-25'
 ORDER BY date_sort DESC;
-
 ```
 
 ```sql income
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(STRPTIME(period_date, '%b-%y'))) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
-        entity = 'Global Green India'  -- consistent reference for ordering
+        entity = 'Global Green India'  
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
         AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
@@ -254,7 +253,7 @@ base AS (
         entity,
         metric,
         metric_type,
-        period_date,
+        date_my,
         period_value
     FROM income_statement
     WHERE 
@@ -271,13 +270,13 @@ cy AS (
     FROM base
     WHERE 
         metric_type IN ('Actual', 'AOP')
-        AND period_date = '${inputs.date_filter.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
 ),
 ly AS (
     SELECT 
         entity,
         metric,
-        STRPTIME(period_date, '%b-%y') AS ly_date,
+        date_my AS ly_date,
         period_value AS ly_value
     FROM base
     WHERE metric_type = 'Actual'
@@ -286,7 +285,7 @@ pivoted AS (
     SELECT 
         cy.entity,
         cy.metric,
-        cy.period_date,
+        cy.date_my AS period_date,
 
         MAX(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) AS cy_aop,
         MAX(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) AS cy_actual,
@@ -297,10 +296,10 @@ pivoted AS (
     LEFT JOIN ly 
         ON cy.entity = ly.entity
         AND cy.metric = ly.metric
-        AND STRPTIME(cy.period_date, '%b-%y') = date_add(ly.ly_date, INTERVAL 1 year)
+        AND STRFTIME(cy.date_my, '%b-%y') = STRFTIME(ly.ly_date + INTERVAL '1 year', '%b-%y')
 
     GROUP BY 
-        cy.entity, cy.metric, cy.period_date
+        cy.entity, cy.metric, cy.date_my
 )
 
 SELECT 
@@ -317,17 +316,16 @@ FROM
 LEFT JOIN metric_order m ON p.metric = m.metric
 ORDER BY 
     m.sort_order;
-
 ```
 
 ```sql income_perc
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(STRPTIME(period_date, '%b-%y'))) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
-        entity = 'Global Green India'  -- consistent reference for ordering
+        entity = 'Global Green India'  
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
         AND metric IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
@@ -338,7 +336,7 @@ base AS (
         entity,
         metric,
         metric_type,
-        period_date,
+        date_my,
         period_value
     FROM income_statement
     WHERE 
@@ -355,13 +353,13 @@ cy AS (
     FROM base
     WHERE 
         metric_type IN ('Actual', 'AOP')
-        AND period_date = '${inputs.date_filter.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
 ),
 ly AS (
     SELECT 
         entity,
         metric,
-        STRPTIME(period_date, '%b-%y') AS ly_date,
+        date_my AS ly_date,
         period_value AS ly_value
     FROM base
     WHERE metric_type = 'Actual'
@@ -370,7 +368,7 @@ pivoted AS (
     SELECT 
         cy.entity,
         cy.metric,
-        cy.period_date,
+        cy.date_my AS period_date,
 
         MAX(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) * 100 AS cy_aop,
         MAX(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) * 100 AS cy_actual,
@@ -381,10 +379,10 @@ pivoted AS (
     LEFT JOIN ly 
         ON cy.entity = ly.entity
         AND cy.metric = ly.metric
-        AND STRPTIME(cy.period_date, '%b-%y') = date_add(ly.ly_date, INTERVAL 1 year)
+        AND STRFTIME(cy.date_my, '%b-%y') = STRFTIME(ly.ly_date + INTERVAL '1 year', '%b-%y')
 
     GROUP BY 
-        cy.entity, cy.metric, cy.period_date
+        cy.entity, cy.metric, cy.date_my
 )
 
 SELECT 
@@ -406,32 +404,34 @@ ORDER BY
 
 ```sql max_date_inc
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_inc
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date_inc
 FROM 
     income_statement
 WHERE 
-    period_date != 'Feb-25';
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
+
 ```
 
 ```sql date_cons
 SELECT DISTINCT 
-    period_date AS date_cons,
-    STRPTIME(period_date, '%b-%y') AS date_sort
+    STRFTIME(date_my, '%b-%y') AS date_cons,
+    date_my AS date_sort
 FROM income_statement
-WHERE TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
-  AND period_date != 'Feb-25' 
+WHERE 
+    date_my IS NOT NULL
+    AND STRFTIME(date_my, '%b-%y') != 'Feb-25'
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql consolidated
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(STRPTIME(period_date, '%b-%y'))) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
-        entity = 'Global Green India'  -- consistent reference for ordering
+        entity = 'Global Green India'  
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
         AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
@@ -442,14 +442,14 @@ base AS (
     SELECT 
         metric,
         metric_type,
-        period_date,
+        date_my,
         period_value
     FROM income_statement
     WHERE 
         entity IN ('Global Green India', 'Global Green Europe')
         AND TRIM(metric) IS NOT NULL
         AND TRIM(metric) <> ''
-        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
 ),
 
 cy AS (
@@ -457,32 +457,32 @@ cy AS (
     FROM base
     WHERE 
         metric_type IN ('Actual', 'AOP')
-        AND period_date = '${inputs.date_cons.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_cons.value}'
 ),
 
 ly AS (
     SELECT 
         metric,
-        STRPTIME(period_date, '%b-%y') AS ly_date,
+        date_my AS ly_date,
         SUM(period_value) AS ly_value
     FROM base
     WHERE metric_type = 'Actual'
-    GROUP BY metric, STRPTIME(period_date, '%b-%y')
+    GROUP BY metric, date_my
 ),
 
 pivoted AS (
     SELECT 
         cy.metric,
-        cy.period_date,
+        cy.date_my AS period_date,
         SUM(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) AS cy_aop,
         SUM(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) AS cy_actual,
         COALESCE(ly.ly_value, 0) AS ly_actual
     FROM cy
     LEFT JOIN ly 
         ON cy.metric = ly.metric
-        AND date_add(STRPTIME(cy.period_date, '%b-%y'), INTERVAL '-1 year') = ly.ly_date
+        AND cy.date_my = ly.ly_date + INTERVAL '1 year'
     GROUP BY 
-        cy.metric, cy.period_date, ly.ly_value
+        cy.metric, cy.date_my, ly.ly_value
 )
 
 SELECT 
@@ -498,15 +498,13 @@ FROM
 LEFT JOIN metric_order m ON p.metric = m.metric
 ORDER BY 
     m.sort_order;
-
-
 ```
 
 ```sql consolidated_perc
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(STRPTIME(period_date, '%b-%y'))) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
         entity = 'Global Green India'
@@ -515,27 +513,30 @@ WITH metric_order AS (
         AND TRIM(metric) IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
     GROUP BY metric
 ),
+
 base AS (
     SELECT 
         TRIM(metric) AS metric,
         metric_type,
-        period_date,
+        date_my,
         period_value
     FROM income_statement
     WHERE 
         entity IN ('Global Green India', 'Global Green Europe')
         AND TRIM(metric) IN ('Sales Revenue (Incl OI)', 'Gross Margin', 'EBITDA', 'EBIT', 'EBT')
 ),
+
 cy_base AS (
     SELECT *
     FROM base
     WHERE 
         metric_type IN ('Actual', 'AOP')
-        AND period_date = '${inputs.date_cons.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_cons.value}'
 ),
+
 ly_base AS (
     SELECT 
-        STRPTIME(period_date, '%b-%y') AS ly_date,
+        date_my AS ly_date,
         SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' THEN period_value ELSE 0 END) AS ly_sales,
         SUM(CASE WHEN metric = 'Gross Margin' THEN period_value ELSE 0 END) AS ly_gm,
         SUM(CASE WHEN metric = 'EBITDA' THEN period_value ELSE 0 END) AS ly_ebitda,
@@ -543,12 +544,14 @@ ly_base AS (
         SUM(CASE WHEN metric = 'EBT' THEN period_value ELSE 0 END) AS ly_ebt
     FROM base
     WHERE metric_type = 'Actual'
-    GROUP BY STRPTIME(period_date, '%b-%y')
+    GROUP BY date_my
 ),
+
 reshaped_cy AS (
     SELECT 
-        STRPTIME(period_date, '%b-%y') AS cy_date,
-        period_date,
+        date_my AS cy_date,
+        STRFTIME(date_my, '%b-%y') AS period_date,
+
         SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'AOP' THEN period_value ELSE 0 END) AS aop_sales,
         SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'Actual' THEN period_value ELSE 0 END) AS actual_sales,
 
@@ -564,7 +567,7 @@ reshaped_cy AS (
         SUM(CASE WHEN metric = 'EBT' AND metric_type = 'AOP' THEN period_value ELSE 0 END) AS aop_ebt,
         SUM(CASE WHEN metric = 'EBT' AND metric_type = 'Actual' THEN period_value ELSE 0 END) AS actual_ebt
     FROM cy_base
-    GROUP BY STRPTIME(period_date, '%b-%y'), period_date
+    GROUP BY date_my, STRFTIME(date_my, '%b-%y')
 )
 
 SELECT 
@@ -612,9 +615,8 @@ COALESCE(
     END, 0
 ) AS "Variance vs LY"
 
-
 FROM reshaped_cy r
-LEFT JOIN ly_base l ON r.cy_date = date_add(l.ly_date, INTERVAL 1 year)
+LEFT JOIN ly_base l ON r.cy_date = l.ly_date + INTERVAL '1 year'
 CROSS JOIN metric_order m
 ORDER BY m.sort_order;
 
@@ -622,11 +624,12 @@ ORDER BY m.sort_order;
 
 ```sql max_date_cons
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_cons
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date_cons
 FROM 
     income_statement
 WHERE 
-    period_date != 'Feb-25';
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
+
 ```
 
 ```sql date_filter_ytd
@@ -646,34 +649,29 @@ WITH month_lookup AS (
         (12, 'December')
     ) AS m(month_num, month_name)
 ),
-parsed_dates AS (
-    SELECT 
-        STRPTIME(period_date, '%b-%y') AS parsed_date
-    FROM income_statement
-    WHERE TRIM(period_date) IS NOT NULL
-),
 calendar_years AS (
     SELECT 
         -- Derive the YTD year label
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 
-                 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN '2019'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2020 THEN '2020'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2021 THEN '2021'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2022 THEN '2022'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2023 THEN '2023'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2024 THEN '2024'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2025 THEN '2025'
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 
+                 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN '2019'
+            WHEN EXTRACT(YEAR FROM date_my) = 2020 THEN '2020'
+            WHEN EXTRACT(YEAR FROM date_my) = 2021 THEN '2021'
+            WHEN EXTRACT(YEAR FROM date_my) = 2022 THEN '2022'
+            WHEN EXTRACT(YEAR FROM date_my) = 2023 THEN '2023'
+            WHEN EXTRACT(YEAR FROM date_my) = 2024 THEN '2024'
+            WHEN EXTRACT(YEAR FROM date_my) = 2025 THEN '2025'
         END AS date_filter_ytd,
 
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 
-                 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
-            ELSE DATE_TRUNC('year', parsed_date)
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 
+                 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
+            ELSE DATE_TRUNC('year', date_my)
         END AS date_sort,
 
-        EXTRACT(MONTH FROM parsed_date) AS month_num
-    FROM parsed_dates
+        EXTRACT(MONTH FROM date_my) AS month_num
+    FROM income_statement
+    WHERE date_my IS NOT NULL
 ),
 calendar_with_names AS (
     SELECT DISTINCT
@@ -701,35 +699,36 @@ FROM
     aggregated_calendar
 ORDER BY 
     date_sort DESC;
+
 ```
 
 ```sql month_filter_ytd
-WITH month_lookup AS (
-    SELECT * FROM (VALUES
-        (1,  'January'),
-        (2,  'February'),
-        (3,  'March'),
-        (4,  'April'),
-        (5,  'May'),
-        (6,  'June'),
-        (7,  'July'),
-        (8,  'August'),
-        (9,  'September'),
-        (10, 'October'),
-        (11, 'November'),
-        (12, 'December')
-    ) AS m(month_num, month_name)
-)
+    WITH month_lookup AS (
+        SELECT * FROM (VALUES
+            (1,  'January'),
+            (2,  'February'),
+            (3,  'March'),
+            (4,  'April'),
+            (5,  'May'),
+            (6,  'June'),
+            (7,  'July'),
+            (8,  'August'),
+            (9,  'September'),
+            (10, 'October'),
+            (11, 'November'),
+            (12, 'December')
+        ) AS m(month_num, month_name)
+    )
 
-SELECT 
-    month_name AS month_filter_ytd,
-    month_name AS label,
-    month_num
-FROM month_lookup
-WHERE 
-    '${inputs.date_filter_ytd.value}' != '2025'
-    OR month_name = 'January'
-ORDER BY month_num;
+    SELECT 
+        month_name AS month_filter_ytd,
+        month_name AS label,
+        month_num
+    FROM month_lookup
+    WHERE 
+        '${inputs.date_filter_ytd.value}' != '2025'
+        OR month_name = 'January'
+    ORDER BY month_num;
 
 ```
 
@@ -737,7 +736,7 @@ ORDER BY month_num;
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(period_date)) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
         entity = 'Global Green India'
@@ -746,6 +745,7 @@ WITH metric_order AS (
         AND metric NOT IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %', 'DSO', 'DPO', 'Trade Payables')
     GROUP BY metric
 ),
+
 ytd_window AS (
     SELECT 
         '${inputs.date_filter_ytd.value}'::INT AS ytd_year,
@@ -766,63 +766,18 @@ ytd_window AS (
             ELSE 12
         END AS ytd_month,
 
+        -- Current YTD Start Date
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019' 
-                THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd.value}', '%d-%m-%Y')
+                THEN STRPTIME('2019-04-01', '%Y-%m-%d')
+            ELSE STRPTIME('${inputs.date_filter_ytd.value}-01-01', '%Y-%m-%d')
         END AS start_date,
 
+        -- Current YTD End Date
         (
             STRPTIME(
-                CASE 
-                    WHEN '${inputs.date_filter_ytd.value}' = '2019' 
-                        THEN '01-' || LPAD(CAST(LEAST(
-                            CASE 
-                                WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
-                                WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
-                                WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
-                                WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
-                                WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
-                                WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
-                                WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
-                                WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
-                                WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
-                                WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
-                                WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
-                                WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
-                                ELSE 12
-                            END, 12
-                        ) AS TEXT), 2, '0') || '-2019'
-                    ELSE '01-' || LPAD(CAST(
-                        CASE 
-                            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
-                            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
-                            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
-                            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
-                            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
-                            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
-                            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
-                            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
-                            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
-                            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
-                            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
-                            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
-                            ELSE 12
-                        END AS TEXT
-                    ), 2, '0') || '-' || '${inputs.date_filter_ytd.value}'
-                END, '%d-%m-%Y'
-            ) + INTERVAL '1 month' - INTERVAL '1 day'
-        ) AS end_date,
-
-        CASE 
-            WHEN '${inputs.date_filter_ytd.value}' = '2019' 
-                THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd.value}::INT - 1), '%d-%m-%Y')
-        END AS ly_start_date,
-
-        (
-            STRPTIME(
-                '01-' || LPAD(CAST(
+                '${inputs.date_filter_ytd.value}-' || 
+                LPAD(CAST(
                     CASE 
                         WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
                         WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
@@ -838,16 +793,47 @@ ytd_window AS (
                         WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
                         ELSE 12
                     END AS TEXT
-                ), 2, '0') || '-' || (${inputs.date_filter_ytd.value}::INT - 1),
-                '%d-%m-%Y'
+                ), 2, '0') || '-01', '%Y-%m-%d'
+            ) + INTERVAL '1 month' - INTERVAL '1 day'
+        ) AS end_date,
+
+        -- Last Year YTD Start Date
+        CASE 
+            WHEN '${inputs.date_filter_ytd.value}' = '2019' 
+                THEN STRPTIME('2018-04-01', '%Y-%m-%d')
+            ELSE STRPTIME((CAST('${inputs.date_filter_ytd.value}' AS INT) - 1) || '-01-01', '%Y-%m-%d')
+        END AS ly_start_date,
+
+        -- Last Year YTD End Date
+        (
+            STRPTIME(
+                (CAST('${inputs.date_filter_ytd.value}' AS INT) - 1) || '-' ||
+                LPAD(CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0') || '-01', '%Y-%m-%d'
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS ly_end_date
 ),
+
 base AS (
     SELECT 
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS period_date,
+        date_my AS period_date,
         period_value
     FROM income_statement
     WHERE 
@@ -859,6 +845,7 @@ base AS (
             WHEN 'GGE' THEN 'Global Green Europe'
         END
 ),
+
 filtered AS (
     SELECT 
         b.metric,
@@ -872,24 +859,25 @@ filtered AS (
     FROM base b
     CROSS JOIN ytd_window w
 ),
+
 aggregated AS (
     SELECT 
         metric,
 
         COALESCE(SUM(CASE 
             WHEN metric_type = 'Actual' 
-             AND period_date BETWEEN start_date AND end_date 
-        THEN period_value END), 0) AS "YTD Actual",
+                AND period_date BETWEEN start_date AND end_date 
+            THEN period_value END), 0) AS "YTD Actual",
 
         COALESCE(SUM(CASE 
             WHEN metric_type = 'AOP' 
-             AND period_date BETWEEN start_date AND end_date 
-        THEN period_value END), 0) AS "YTD AOP",
+                AND period_date BETWEEN start_date AND end_date 
+            THEN period_value END), 0) AS "YTD AOP",
 
         COALESCE(SUM(CASE 
             WHEN metric_type = 'Actual' 
-             AND period_date BETWEEN ly_start_date AND ly_end_date 
-        THEN period_value END), 0) AS "LY Actual YTD"
+                AND period_date BETWEEN ly_start_date AND ly_end_date 
+            THEN period_value END), 0) AS "LY Actual YTD"
         
     FROM filtered
     GROUP BY metric
@@ -905,7 +893,7 @@ SELECT
 FROM aggregated a
 LEFT JOIN metric_order m ON a.metric = m.metric
 WHERE 
-    a.metric NOT IN ('DSO', 'DPO') -- defensive double filter
+    a.metric NOT IN ('DSO', 'DPO') 
     AND (
         a."YTD Actual" <> 0
         OR a."YTD AOP" <> 0
@@ -916,20 +904,22 @@ WHERE
 ORDER BY m.sort_order;
 
 
-
 ```
 
 ```sql ytd_perc
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(period_date)) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
         entity = 'Global Green India'
-        AND TRIM(metric) IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
+        AND TRIM(metric) IS NOT NULL
+        AND TRIM(metric) <> ''
+        AND metric IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
     GROUP BY metric
 ),
+
 ytd_window AS (
     SELECT 
         '${inputs.date_filter_ytd.value}'::INT AS ytd_year,
@@ -950,100 +940,78 @@ ytd_window AS (
             ELSE 12
         END AS ytd_month,
 
-        -- Start of current YTD
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019'
-                THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd.value}', '%d-%m-%Y')
+                THEN STRPTIME('2019-04-01', '%Y-%m-%d')
+            ELSE STRPTIME('${inputs.date_filter_ytd.value}-01-01', '%Y-%m-%d')
         END AS start_date,
 
-        -- End of current YTD
         (
             STRPTIME(
-                CASE 
-                    WHEN '${inputs.date_filter_ytd.value}' = '2019' 
-                        THEN '01-' || LPAD(CAST(LEAST(
-                            CASE 
-                                WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
-                                WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
-                                WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
-                                WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
-                                WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
-                                WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
-                                WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
-                                WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
-                                WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
-                                WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
-                                WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
-                                WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
-                                ELSE 12
-                            END, 12
-                        ) AS TEXT), 2, '0') || '-2019'
-                    ELSE '01-' || LPAD(CAST(
-                        CASE 
-                            WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
-                            WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
-                            WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
-                            WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
-                            WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
-                            WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
-                            WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
-                            WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
-                            WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
-                            WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
-                            WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
-                            WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
-                            ELSE 12
-                        END AS TEXT
-                    ), 2, '0') || '-' || '${inputs.date_filter_ytd.value}'
-                END, '%d-%m-%Y'
+                '${inputs.date_filter_ytd.value}-' || 
+                LPAD(CAST(CASE 
+                    WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                    WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                    WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                    WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                    WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                    WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                    WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                    WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                    WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                    WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                    WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                    WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                    ELSE 12
+                END AS TEXT), 2, '0') || '-01', '%Y-%m-%d'
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS end_date,
 
-        -- Start and end of LY
         CASE 
             WHEN '${inputs.date_filter_ytd.value}' = '2019'
-                THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd.value}::INT - 1), '%d-%m-%Y')
+                THEN STRPTIME('2018-04-01', '%Y-%m-%d')
+            ELSE STRPTIME((CAST('${inputs.date_filter_ytd.value}' AS INT) - 1) || '-01-01', '%Y-%m-%d')
         END AS ly_start_date,
 
         (
             STRPTIME(
-                '01-' || LPAD(CAST(
-                    CASE 
-                        WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
-                        WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
-                        WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
-                        WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
-                        WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
-                        WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
-                        WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
-                        WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
-                        WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
-                        WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
-                        WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
-                        WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
-                        ELSE 12
-                    END AS TEXT
-                ), 2, '0') || '-' || (${inputs.date_filter_ytd.value}::INT - 1),
-                '%d-%m-%Y'
+                (CAST('${inputs.date_filter_ytd.value}' AS INT) - 1) || '-' ||
+                LPAD(CAST(CASE 
+                    WHEN '${inputs.month_filter_ytd.value}' = 'January' THEN 1
+                    WHEN '${inputs.month_filter_ytd.value}' = 'February' THEN 2
+                    WHEN '${inputs.month_filter_ytd.value}' = 'March' THEN 3
+                    WHEN '${inputs.month_filter_ytd.value}' = 'April' THEN 4
+                    WHEN '${inputs.month_filter_ytd.value}' = 'May' THEN 5
+                    WHEN '${inputs.month_filter_ytd.value}' = 'June' THEN 6
+                    WHEN '${inputs.month_filter_ytd.value}' = 'July' THEN 7
+                    WHEN '${inputs.month_filter_ytd.value}' = 'August' THEN 8
+                    WHEN '${inputs.month_filter_ytd.value}' = 'September' THEN 9
+                    WHEN '${inputs.month_filter_ytd.value}' = 'October' THEN 10
+                    WHEN '${inputs.month_filter_ytd.value}' = 'November' THEN 11
+                    WHEN '${inputs.month_filter_ytd.value}' = 'December' THEN 12
+                    ELSE 12
+                END AS TEXT), 2, '0') || '-01', '%Y-%m-%d'
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS ly_end_date
 ),
+
 base AS (
     SELECT 
-        TRIM(metric) AS metric,
+        metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS period_date,
+        date_my AS period_date,
         period_value
     FROM income_statement
     WHERE 
-        TRIM(metric) IN ('Sales Revenue (Incl OI)', 'Gross Margin', 'EBITDA', 'EBIT', 'EBT')
+        TRIM(metric) IS NOT NULL
+        AND TRIM(metric) <> ''
+        AND metric IN ('GROSS %', 'EBITDA %', 'EBT %', 'EBIT %')
         AND entity = CASE COALESCE('${inputs.matric_ytd}', 'GGCL')
             WHEN 'GGCL' THEN 'Global Green India'
             WHEN 'GGE' THEN 'Global Green Europe'
         END
 ),
+
 filtered AS (
     SELECT 
         b.metric,
@@ -1057,87 +1025,58 @@ filtered AS (
     FROM base b
     CROSS JOIN ytd_window w
 ),
+
 aggregated AS (
-    SELECT
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_sales_actual,
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_sales_aop,
-        SUM(CASE WHEN metric = 'Sales Revenue (Incl OI)' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_sales_ly,
+    SELECT 
+        metric,
+        COALESCE(SUM(CASE 
+            WHEN metric_type = 'Actual' 
+             AND period_date BETWEEN start_date AND end_date 
+        THEN period_value END), 0) * 100 AS "YTD Actual",
 
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_gm_actual,
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_gm_aop,
-        SUM(CASE WHEN metric = 'Gross Margin' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_gm_ly,
+        COALESCE(SUM(CASE 
+            WHEN metric_type = 'AOP' 
+             AND period_date BETWEEN start_date AND end_date 
+        THEN period_value END), 0) * 100 AS "YTD AOP",
 
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebitda_actual,
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebitda_aop,
-        SUM(CASE WHEN metric = 'EBITDA' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebitda_ly,
-
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebit_actual,
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebit_aop,
-        SUM(CASE WHEN metric = 'EBIT' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebit_ly,
-
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'Actual' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebt_actual,
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'AOP' AND period_date BETWEEN start_date AND end_date THEN period_value ELSE 0 END) AS ytd_ebt_aop,
-        SUM(CASE WHEN metric = 'EBT' AND metric_type = 'Actual' AND period_date BETWEEN ly_start_date AND ly_end_date THEN period_value ELSE 0 END) AS ytd_ebt_ly
+        COALESCE(SUM(CASE 
+            WHEN metric_type = 'Actual' 
+             AND period_date BETWEEN ly_start_date AND ly_end_date 
+        THEN period_value END), 0) * 100 AS "LY Actual YTD"
+        
     FROM filtered
+    GROUP BY metric
 )
 
 SELECT 
-    m.metric,
-
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) * 100
-    END AS "YTD Actual",
-
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0)) * 100
-    END AS "YTD AOP",
-
-    COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-    END, 0
-) AS "LY Actual YTD",
-
-COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-    END, 0
-) AS "Variance vs AOP YTD",
-
-COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-    END, 0
-) AS "Variance vs LY YTD"
-
+    a.metric,
+    a."YTD Actual",
+    a."YTD AOP",
+    a."LY Actual YTD",
+    a."YTD Actual" - a."YTD AOP" AS "Variance vs AOP YTD",
+    a."YTD Actual" - a."LY Actual YTD" AS "Variance vs LY YTD"
 FROM aggregated a
-CROSS JOIN metric_order m
+LEFT JOIN metric_order m ON a.metric = m.metric
+WHERE 
+    a.metric NOT IN ('DSO', 'DPO') 
+    AND (
+        a."YTD Actual" <> 0
+        OR a."YTD AOP" <> 0
+        OR a."LY Actual YTD" <> 0
+        OR a."YTD Actual" - a."YTD AOP" <> 0
+        OR a."YTD Actual" - a."LY Actual YTD" <> 0
+    )
 ORDER BY m.sort_order;
-
 
 ```
 
 ```sql max_date_ytd_income
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_ytd_income
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date_ytd_income
 FROM 
     income_statement
-WHERE period_date != 'Feb-25';
+WHERE 
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
 ```
 
 ```sql date_filter_ytd_cons
@@ -1157,34 +1096,29 @@ WITH month_lookup AS (
         (12, 'December')
     ) AS m(month_num, month_name)
 ),
-parsed_dates AS (
-    SELECT 
-        STRPTIME(period_date, '%b-%y') AS parsed_date
-    FROM income_statement
-    WHERE TRIM(period_date) IS NOT NULL
-),
 calendar_years AS (
     SELECT 
         -- Derive the YTD year label
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 
-                 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN '2019'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2020 THEN '2020'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2021 THEN '2021'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2022 THEN '2022'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2023 THEN '2023'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2024 THEN '2024'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2025 THEN '2025'
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 
+                 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN '2019'
+            WHEN EXTRACT(YEAR FROM date_my) = 2020 THEN '2020'
+            WHEN EXTRACT(YEAR FROM date_my) = 2021 THEN '2021'
+            WHEN EXTRACT(YEAR FROM date_my) = 2022 THEN '2022'
+            WHEN EXTRACT(YEAR FROM date_my) = 2023 THEN '2023'
+            WHEN EXTRACT(YEAR FROM date_my) = 2024 THEN '2024'
+            WHEN EXTRACT(YEAR FROM date_my) = 2025 THEN '2025'
         END AS date_filter_ytd_cons,
 
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 
-                 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
-            ELSE DATE_TRUNC('year', parsed_date)
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 
+                 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
+            ELSE DATE_TRUNC('year', date_my)
         END AS date_sort,
 
-        EXTRACT(MONTH FROM parsed_date) AS month_num
-    FROM parsed_dates
+        EXTRACT(MONTH FROM date_my) AS month_num
+    FROM income_statement
+    WHERE date_my IS NOT NULL
 ),
 calendar_with_names AS (
     SELECT DISTINCT
@@ -1247,7 +1181,7 @@ ORDER BY month_num;
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(period_date)) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
         entity = 'Global Green India'
@@ -1279,64 +1213,14 @@ ytd_window AS (
         -- Start of current YTD
         CASE 
             WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
-                THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y')
+                THEN STRPTIME('2019-04-01', '%Y-%m-%d')
+            ELSE STRPTIME('${inputs.date_filter_ytd_cons.value}-01-01', '%Y-%m-%d')
         END AS start_date,
 
         -- End of current YTD
-        (
-            STRPTIME(
-                CASE 
-                    WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
-                        THEN '01-' || LPAD(CAST(
-                            CASE 
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
-                                WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
-                                ELSE 12
-                            END AS TEXT
-                        ), 2, '0') || '-2019'
-                    ELSE '01-' || LPAD(CAST(
-                        CASE 
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
-                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
-                            ELSE 12
-                        END AS TEXT
-                    ), 2, '0') || '-' || '${inputs.date_filter_ytd_cons.value}'
-                END, '%d-%m-%Y'
-            ) + INTERVAL '1 month' - INTERVAL '1 day'
-        ) AS end_date,
-
-        -- Start of LY YTD
-        CASE 
-            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019' 
-                THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y')
-        END AS ly_start_date,
-
-        -- End of LY YTD
-        (
-            STRPTIME(
-                '01-' || LPAD(CAST(
+        STRPTIME(
+            '${inputs.date_filter_ytd_cons.value}-' || LPAD(
+                CAST(
                     CASE 
                         WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
                         WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
@@ -1352,16 +1236,46 @@ ytd_window AS (
                         WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
                         ELSE 12
                     END AS TEXT
-                ), 2, '0') || '-' || (${inputs.date_filter_ytd_cons.value}::INT - 1),
-                '%d-%m-%Y'
-            ) + INTERVAL '1 month' - INTERVAL '1 day'
-        ) AS ly_end_date
+                ), 2, '0'
+            ) || '-01', '%Y-%m-%d'
+        ) + INTERVAL '1 month' - INTERVAL '1 day' AS end_date,
+
+        -- Start of LY YTD
+        CASE 
+            WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
+                THEN STRPTIME('2018-04-01', '%Y-%m-%d')
+            ELSE STRPTIME((CAST('${inputs.date_filter_ytd_cons.value}' AS INT) - 1) || '-01-01', '%Y-%m-%d')
+        END AS ly_start_date,
+
+        -- End of LY YTD
+        STRPTIME(
+            (CAST('${inputs.date_filter_ytd_cons.value}' AS INT) - 1) || '-' ||
+            LPAD(
+                CAST(
+                    CASE 
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                        ELSE 12
+                    END AS TEXT
+                ), 2, '0'
+            ) || '-01', '%Y-%m-%d'
+        ) + INTERVAL '1 month' - INTERVAL '1 day' AS ly_end_date
 ),
 base AS (
     SELECT 
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS period_date,
+        date_my AS period_date,
         period_value
     FROM income_statement
     WHERE 
@@ -1429,7 +1343,7 @@ ORDER BY m.sort_order;
 WITH metric_order AS (
     SELECT 
         metric,
-        ROW_NUMBER() OVER (ORDER BY MIN(period_date)) AS sort_order
+        ROW_NUMBER() OVER (ORDER BY MIN(date_my)) AS sort_order
     FROM income_statement
     WHERE 
         entity = 'Global Green India'
@@ -1456,63 +1370,67 @@ ytd_window AS (
             ELSE 12
         END AS ytd_month,
 
-        -- Start date
+        -- Start of current YTD
         CASE 
             WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
-                THEN STRPTIME('Apr-19', '%b-%y')
-            ELSE STRPTIME('01-01-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y')
+                THEN STRPTIME('2019-04-01', '%Y-%m-%d')
+            ELSE STRPTIME('${inputs.date_filter_ytd_cons.value}-01-01', '%Y-%m-%d')
         END AS start_date,
 
-        -- End date
+        -- End of current YTD
         (
-            STRPTIME(
-                '01-' || LPAD(CAST(
-                    CASE 
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
-                        ELSE 12
-                    END AS TEXT
-                ), 2, '0') || '-' || '${inputs.date_filter_ytd_cons.value}', '%d-%m-%Y'
+            STRPTIME('${inputs.date_filter_ytd_cons.value}-' || 
+                LPAD(
+                    CAST(
+                        CASE 
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                            ELSE 12
+                        END AS TEXT
+                    ), 2, '0'
+                ) || '-01', '%Y-%m-%d'
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS end_date,
 
         -- LY Start
         CASE 
             WHEN '${inputs.date_filter_ytd_cons.value}' = '2019'
-                THEN STRPTIME('Apr-18', '%b-%y')
-            ELSE STRPTIME('01-01-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y')
+                THEN STRPTIME('2018-04-01', '%Y-%m-%d')
+            ELSE STRPTIME((CAST('${inputs.date_filter_ytd_cons.value}' AS INT) - 1) || '-01-01', '%Y-%m-%d')
         END AS ly_start_date,
 
         -- LY End
         (
-            STRPTIME(
-                '01-' || LPAD(CAST(
-                    CASE 
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
-                        WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
-                        ELSE 12
-                    END AS TEXT
-                ), 2, '0') || '-' || (${inputs.date_filter_ytd_cons.value}::INT - 1), '%d-%m-%Y'
+            STRPTIME((CAST('${inputs.date_filter_ytd_cons.value}' AS INT) - 1) || '-' ||
+                LPAD(
+                    CAST(
+                        CASE 
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'January' THEN 1
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'February' THEN 2
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'March' THEN 3
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'April' THEN 4
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'May' THEN 5
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'June' THEN 6
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'July' THEN 7
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'August' THEN 8
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'September' THEN 9
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'October' THEN 10
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'November' THEN 11
+                            WHEN '${inputs.month_filter_ytd_cons.value}' = 'December' THEN 12
+                            ELSE 12
+                        END AS TEXT
+                    ), 2, '0'
+                ) || '-01', '%Y-%m-%d'
             ) + INTERVAL '1 month' - INTERVAL '1 day'
         ) AS ly_end_date
 ),
@@ -1520,7 +1438,7 @@ base AS (
     SELECT 
         TRIM(metric) AS metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS period_date,
+        date_my AS period_date,
         period_value
     FROM income_statement
     WHERE 
@@ -1582,45 +1500,46 @@ SELECT
     END AS "YTD AOP",
 
     COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBITDA %' THEN (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBIT %' THEN (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-        WHEN 'EBT %' THEN (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
-    END, 0
-) AS "LY Actual YTD",
+        CASE m.metric
+            WHEN 'GROSS %' THEN (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
+            WHEN 'EBITDA %' THEN (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
+            WHEN 'EBIT %' THEN (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
+            WHEN 'EBT %' THEN (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0)) * 100
+        END, 0
+    ) AS "LY Actual YTD",
 
     COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
-    END, 0
-) AS "Variance vs AOP YTD",
+        CASE m.metric
+            WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
+            WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
+            WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
+            WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_aop / NULLIF(a.ytd_sales_aop, 0))) * 100
+        END, 0
+    ) AS "Variance vs AOP YTD",
 
-   COALESCE(
-    CASE m.metric
-        WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-        WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
-    END, 0
-) AS "Variance vs LY YTD"
+    COALESCE(
+        CASE m.metric
+            WHEN 'GROSS %' THEN ((a.ytd_gm_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_gm_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
+            WHEN 'EBITDA %' THEN ((a.ytd_ebitda_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebitda_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
+            WHEN 'EBIT %' THEN ((a.ytd_ebit_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebit_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
+            WHEN 'EBT %' THEN ((a.ytd_ebt_actual / NULLIF(a.ytd_sales_actual, 0)) - (a.ytd_ebt_ly / NULLIF(a.ytd_sales_ly, 0))) * 100
+        END, 0
+    ) AS "Variance vs LY YTD"
 
 FROM aggregated a
 CROSS JOIN metric_order m
 ORDER BY m.sort_order;
 
-
 ```
 
 ```sql max_date_ytd_cons
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date_ytd_cons
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date_ytd_cons
 FROM 
     income_statement
-WHERE period_date != 'Feb-25';
+WHERE 
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
+
 ```
 
 ```sql cons_inc_chart
@@ -1634,7 +1553,7 @@ WITH base_data AS (
     entity IN ('Global Green India', 'Global Green Europe')
     AND metric IN ('Gross Margin', 'Variable Cost')
     AND metric_type = 'Actual'
-    AND period_date = '${inputs.date_filter.value}'
+    AND date_my = STRPTIME('${inputs.date_filter.value}', '%b-%y')
   GROUP BY metric
 ),
 
@@ -1664,7 +1583,9 @@ ORDER BY
     WHEN Particulars = 'Gross Margin' THEN 1
     WHEN Particulars = 'Variable Cost' THEN 2
     ELSE 99
-  END
+  END;
+
+
 ```
 
 ```sql cons_ytd_inc
@@ -1678,7 +1599,7 @@ WITH base_data AS (
     entity IN ('Global Green India', 'Global Green Europe')
     AND metric IN ('Gross Margin', 'Variable Cost')
     AND metric_type = 'Actual'
-    AND RIGHT(period_date, 2) = RIGHT('${inputs.date_filter_ytd.value}', 2)
+    AND EXTRACT(YEAR FROM date_my) = ${inputs.date_filter_ytd.value}::INT
   GROUP BY metric, entity
 ),
 
@@ -1717,7 +1638,7 @@ ORDER BY
     WHEN Particulars = 'Gross Margin' THEN 1
     WHEN Particulars = 'Variable Cost' THEN 2
     ELSE 99
-  END
+  END;
 
 ```
 
@@ -1727,92 +1648,4 @@ SELECT '${inputs.date_filter.value}' AS Selected_Date;
 
 ```sql selected_year_ytd
 SELECT '${inputs.date_filter_ytd.value}' AS Selected_year
-```
-
-```sql sequence
-WITH metric_order AS (
-    SELECT 
-        metric,
-        CASE metric
-            WHEN 'Sales Revenue (Incl OI)' THEN 1
-            WHEN 'Variable Cost' THEN 2
-            WHEN 'Gross Margin' THEN 3
-            WHEN 'Fixed Cost' THEN 4
-            WHEN 'EBITDA' THEN 5
-            WHEN 'Depreciation' THEN 6
-            WHEN 'EBIT' THEN 7
-            WHEN 'Interest Expenses' THEN 8
-            WHEN 'EBT' THEN 9
-            WHEN 'Other Income (Income)/Expense' THEN 10
-            WHEN 'FX Unrealised (Gain)/loss' THEN 11
-            WHEN 'PBT Before Exceptional Profit / (Loss)' THEN 12
-            WHEN 'Tax Provisions' THEN 13
-            WHEN 'PBT - (from operations)' THEN 14 -- This is mapped from PAT in the visual
-            ELSE 999
-        END AS sort_order
-    FROM income_statement
-    WHERE 
-        entity = 'Global Green India'
-        AND TRIM(metric) IS NOT NULL
-        AND TRIM(metric) <> ''
-),
-base AS (
-    SELECT 
-        metric,
-        metric_type,
-        period_date,
-        period_value
-    FROM income_statement
-    WHERE 
-        entity IN ('Global Green India', 'Global Green Europe')
-        AND TRIM(metric) IS NOT NULL
-        AND TRIM(metric) <> ''
-),
-cy AS (
-    SELECT *
-    FROM base
-    WHERE 
-        metric_type IN ('Actual', 'AOP')
-        AND period_date = '${inputs.date_cons.value}'
-),
-ly AS (
-    SELECT 
-        metric,
-        STRPTIME(period_date, '%b-%y') AS ly_date,
-        SUM(period_value) AS ly_value
-    FROM base
-    WHERE metric_type = 'Actual'
-    GROUP BY metric, STRPTIME(period_date, '%b-%y')
-),
-pivoted AS (
-    SELECT 
-        cy.metric,
-        cy.period_date,
-
-        SUM(CASE WHEN cy.metric_type = 'AOP' THEN cy.period_value END) AS cy_aop,
-        SUM(CASE WHEN cy.metric_type = 'Actual' THEN cy.period_value END) AS cy_actual,
-        COALESCE(ly.ly_value, 0) AS ly_actual
-
-    FROM 
-        cy
-    LEFT JOIN ly 
-        ON cy.metric = ly.metric
-        AND date_add(STRPTIME(cy.period_date, '%b-%y'), INTERVAL '-1 year') = ly.ly_date
-    GROUP BY 
-        cy.metric, cy.period_date, ly.ly_value
-)
-
-SELECT 
-    p.metric,
-    p.period_date,
-    p.cy_aop AS "CY AOP",
-    p.cy_actual AS "CY Actual",
-    p.ly_actual AS "LY Actual",
-    p.cy_actual - p.cy_aop AS "Variance vs AOP",
-    p.cy_actual - p.ly_actual AS "Variance vs LY"
-FROM 
-    pivoted p
-LEFT JOIN metric_order m ON p.metric = m.metric
-ORDER BY 
-    m.sort_order;
 ```

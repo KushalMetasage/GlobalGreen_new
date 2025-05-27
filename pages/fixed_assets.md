@@ -83,8 +83,6 @@
 <Column id = subcategory totalFmt="Total" totalAgg="" subtotalFmt='@value'/>
 <Column id = particulars totalFmt='0 "Line Items"' totalAgg=""/>
 <Column id = current_value title = '{inputs.date_filter_yearly.value}' fmt="$0.00" totalAgg="sum" subtotalAgg="sum"/>
-<Column id = next_year_value title = "Next Year"  fmt="$0.00" totalAgg="sum" subtotalAgg="sum"/>
-<!-- <Column id = variance fmt="$0.00" contentType="delta" totalAgg="sum" subtotalAgg="sum"/> -->
 </DataTable>
 
 <div class = 'mb-15'> </div>
@@ -95,30 +93,30 @@ WITH current_year AS (
     entity,
     sub_category AS subcategory,
     particulars,
-    period_date AS current_year_date,
-    STRPTIME(period_date, '%b-%y') AS parsed_date,
+    date_my AS current_year_date,
+    date_my AS parsed_date,
     period_value AS current_value
   FROM balance_sheet
   WHERE entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.date_filter.value}'
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
 ),
 next_year AS (
   SELECT
     entity,
     sub_category,
     particulars,
-    period_date AS next_year_date,
-    STRPTIME(period_date, '%b-%y') AS parsed_date,
+    date_my AS next_year_date,
+    date_my AS parsed_date,
     period_value AS next_year_value
   FROM balance_sheet
   WHERE entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.next_year_date.value}'  
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.next_year_date.value}'  
 ),
 merged AS (
   SELECT
@@ -145,7 +143,6 @@ grouped AS (
         'Non-Current Assets',
         'Non-Current Assets-Investment in Subsidiary'
       ) THEN 'Non Current Assets'
-      
       WHEN particulars IN (
         'Inventory',
         'Inventories',
@@ -156,7 +153,6 @@ grouped AS (
         'Sundry Debtors',
         'Other Current Assets'
       ) THEN 'Current Assets'
-      
       WHEN particulars IN (
         'Equity Capital',
         'Reserves',
@@ -164,14 +160,12 @@ grouped AS (
         'Share Capital',
         'Reserve & Surplus'
       ) THEN 'Shareholders'' funds'
-      
       WHEN particulars IN (
         'Long Term Loan',
         'Bonds Payable',
         'Other Long Liabilities',
         'Redeemable Preference Shares & Other liabilities'
       ) THEN 'Non Current Liabilities'
-      
       WHEN particulars IN (
         'Short Term Loan',
         'Payables',
@@ -180,7 +174,6 @@ grouped AS (
         'Other Current Liabilities & Provisions',
         'Trade Payables'
       ) THEN 'Current Liabilities'
-      
       ELSE 'Unmapped'
     END AS subcategory_group
   FROM merged
@@ -198,6 +191,7 @@ SELECT
 FROM grouped
 WHERE particulars = 'Fixed Assets'
 ORDER BY subcategory_group, subcategory, particulars;
+
 
 ```
 
@@ -316,48 +310,45 @@ ORDER BY subcategory_group, subcategory, particulars;
 
 ```sql date_filter
 SELECT 
-  bs.period_date AS date_filter,
-  STRPTIME(bs.period_date, '%b-%y') AS date_sort
+  STRFTIME(bs.date_my, '%b-%y') AS date_filter,
+  bs.date_my AS date_sort
 FROM balance_sheet bs
 WHERE EXISTS (
   SELECT 1
   FROM balance_sheet bs_next
-  WHERE STRPTIME(bs_next.period_date, '%b-%y') = STRPTIME(bs.period_date, '%b-%y') + INTERVAL 1 year
+  WHERE bs_next.date_my = bs.date_my + INTERVAL 1 year
 )
-GROUP BY ALL
+GROUP BY bs.date_my
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql next_year_date
 SELECT 
-  bs.period_date AS next_year_date,
-  STRPTIME(bs.period_date, '%b-%y') AS date_sort
+  STRFTIME(bs.date_my, '%b-%y') AS next_year_date,
+  bs.date_my AS date_sort
 FROM balance_sheet bs
-WHERE bs.period_date = STRFTIME(
-  STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year, '%b-%y'
+WHERE bs.date_my = (
+  STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year
 )
-GROUP BY ALL
+GROUP BY bs.date_my;
 ```
 
 ```sql date_filter_yearly
 SELECT 
-  STRFTIME(STRPTIME(bs.period_date, '%b-%y'), '%Y') AS date_filter_yearly,
-  MIN(STRPTIME(bs.period_date, '%b-%y')) AS date_sort  
+  STRFTIME(bs.date_my, '%Y') AS date_filter_yearly,
+  MIN(bs.date_my) AS date_sort  
 FROM balance_sheet bs
-GROUP BY date_filter_yearly
+GROUP BY STRFTIME(bs.date_my, '%Y')
 ORDER BY date_sort DESC;
-```
-
-```sql next_year_label
-SELECT 
-  CAST(CAST('${inputs.date_filter_yearly.value}' AS INTEGER) + 1 AS VARCHAR) AS label
 ```
 
 ```sql max_date
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date
 FROM 
     balance_sheet;
+
 ```
 
 

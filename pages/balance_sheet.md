@@ -67,30 +67,30 @@ WITH current_year AS (
     entity,
     sub_category AS subcategory,
     particulars,
-    period_date AS current_year_date,
-    STRPTIME(period_date, '%b-%y') AS parsed_date,
+    date_my AS current_year_date,
+    date_my AS parsed_date,
     period_value AS current_value
   FROM balance_sheet
   WHERE entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.date_filter.value}'
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
 ),
 next_year AS (
   SELECT
     entity,
     sub_category,
     particulars,
-    period_date AS next_year_date,
-    STRPTIME(period_date, '%b-%y') AS parsed_date,
+    date_my AS next_year_date,
+    date_my AS parsed_date,
     period_value AS next_year_value
   FROM balance_sheet
   WHERE entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.next_year_date.value}'  
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.next_year_date.value}'  
 ),
 merged AS (
   SELECT
@@ -169,38 +169,36 @@ SELECT
   variance
 FROM grouped
 ORDER BY subcategory_group, subcategory, particulars;
-
 ```
 
 ```sql date_filter
 SELECT 
-  bs.period_date AS date_filter,
-  STRPTIME(bs.period_date, '%b-%y') AS date_sort
+  STRFTIME(bs.date_my, '%b-%y') AS date_filter,
+  bs.date_my AS date_sort
 FROM balance_sheet bs
 WHERE EXISTS (
   SELECT 1
   FROM balance_sheet bs_next
-  WHERE STRPTIME(bs_next.period_date, '%b-%y') = STRPTIME(bs.period_date, '%b-%y') + INTERVAL 1 year
+  WHERE bs_next.date_my = bs.date_my + INTERVAL 1 year
 )
-GROUP BY ALL
+GROUP BY bs.date_my
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql next_year_date
 SELECT 
-  bs.period_date AS next_year_date,
-  STRPTIME(bs.period_date, '%b-%y') AS date_sort
+  STRFTIME(bs.date_my, '%b-%y') AS next_year_date
 FROM balance_sheet bs
-WHERE bs.period_date = STRFTIME(
-  STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year, '%b-%y'
+WHERE bs.date_my = (
+  STRPTIME('${inputs.date_filter.value}', '%b-%y') + INTERVAL 1 year
 )
-GROUP BY ALL
-
+GROUP BY next_year_date
 ```
 
 ```sql max_date
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date
 FROM 
     balance_sheet;
 ```

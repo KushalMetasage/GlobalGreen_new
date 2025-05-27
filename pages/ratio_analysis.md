@@ -138,48 +138,46 @@
 <div class = 'mb-15'> </div>
 
 ```sql date_filter
-SELECT DISTINCT period_date AS date_filter,
-STRPTIME(period_date, '%b-%y') AS date_sort
+SELECT 
+  DISTINCT STRFTIME(date_my, '%b-%y') AS date_filter,
+  date_my AS date_sort
 FROM balance_sheet
-WHERE TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
+WHERE date_my IS NOT NULL
 ORDER BY date_sort DESC;
 ```
 
 ```sql date_filter_mon
 SELECT DISTINCT 
-  period_date AS date_filter_mon,
-  STRPTIME(period_date, '%b-%y') AS date_sort
+  STRFTIME(date_my, '%b-%y') AS date_filter_mon,
+  date_my AS date_sort
 FROM income_statement
 WHERE 
-  TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
-  AND period_date != 'Feb-25' 
-  AND period_date != 'Jan-25' 
+  date_my IS NOT NULL
+  AND STRFTIME(date_my, '%b-%y') NOT IN ('Feb-25', 'Jan-25')
 ORDER BY date_sort DESC;
-
 ```
 
 
 ```sql date_filter_yearly
 SELECT DISTINCT 
-  '20' || RIGHT(period_date, 2) AS date_filter_yearly,
-  CAST('20' || RIGHT(period_date, 2) AS INTEGER) AS date_sort
+  STRFTIME(date_my, '%Y') AS date_filter_yearly,
+  CAST(STRFTIME(date_my, '%Y') AS INTEGER) AS date_sort
 FROM income_statement
 WHERE 
-  TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
-  AND period_date NOT IN ('Feb-25', 'Jan-25')
+  date_my IS NOT NULL
+  AND STRFTIME(date_my, '%b-%y') NOT IN ('Feb-25', 'Jan-25')
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql date_filter_inc
-SELECT DISTINCT period_date AS date_filter_inc,
-STRPTIME(period_date, '%b-%y') AS date_sort
+SELECT DISTINCT 
+  STRFTIME(date_my, '%b-%y') AS date_filter_inc,
+  date_my AS date_sort
 FROM income_statement
-WHERE TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
-  AND period_date!='Feb-25'
+WHERE 
+  date_my IS NOT NULL
+  AND STRFTIME(date_my, '%b-%y') != 'Feb-25'
 ORDER BY date_sort DESC;
 ```
 
@@ -192,7 +190,7 @@ WITH bs_filtered AS (
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-    AND period_date = '${inputs.date_filter.value}'
+    AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
 ),
 aggregated AS (
   SELECT
@@ -237,6 +235,7 @@ SELECT
   equity / NULLIF((equity + borrowings + other_long_liabilities), 0) AS equity_ratio
 FROM aggregated;
 
+
 ```
 
 ```sql ratio_analysis_inc
@@ -247,7 +246,7 @@ WITH is_filtered AS (
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-    AND period_date = '${inputs.date_filter_inc.value}'
+    AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter_inc.value}'
     AND metric_type IN ('Actual', 'CY-25 ACT')  -- Allow both types of actuals
 ),
 aggregated AS (
@@ -272,31 +271,33 @@ SELECT
   ebit / NULLIF(interest_expenses, 0) AS interest_coverage
 FROM aggregated;
 
+
 ```
 ```sql cash_bal_mon
 SELECT
-  period_date,
+  STRFTIME(date_my, '%b-%y') AS period_date,
   entity,
   SUM(period_value) AS cash_balance
 FROM balance_sheet
 WHERE particulars = 'Cash and Bank Balances'
-AND period_date = '${inputs.date_filter_mon.value}'
-AND entity = CASE '${inputs.matric_mon}'
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter_mon.value}'
+  AND entity = CASE '${inputs.matric_mon}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-GROUP BY entity, period_date
-ORDER BY entity, period_date;
+GROUP BY entity, date_my
+ORDER BY entity, date_my;
+
 ```
 
 ```sql cash_bal_yearly
 SELECT
   entity,
-  '20' || RIGHT(period_date, 2) AS year,
+  STRFTIME(date_my, '%Y') AS year,
   SUM(period_value) AS cash_balance
 FROM balance_sheet
 WHERE particulars = 'Cash and Bank Balances'
-  AND '20' || RIGHT(period_date, 2) = '${inputs.date_filter_yearly.value}'
+  AND STRFTIME(date_my, '%Y') = '${inputs.date_filter_yearly.value}'
   AND entity = CASE '${inputs.matric_yearly}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
@@ -304,19 +305,21 @@ WHERE particulars = 'Cash and Bank Balances'
 GROUP BY entity, year
 ORDER BY entity, year;
 
+
 ```
 
 ```sql max_date
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date
 FROM 
     balance_sheet;
 ```
 
 ```sql max_date_inc
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_date
 FROM 
-    income_statement;
-  WHERE period_date!='Feb-25'
+    income_statement
+WHERE 
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
 ```

@@ -36,12 +36,22 @@
 SELECT 
     company_name,
     particular AS Particulars,
-    MAX(CAST(NULLIF(TRIM(CASE WHEN period_date = 'Dec-23' THEN period_value END), '') AS DECIMAL(10,2))) AS "Dec-23",
-    MAX(CAST(NULLIF(TRIM(CASE WHEN period_date = 'Dec-24' THEN period_value END), '') AS DECIMAL(10,2))) AS "Dec-24",
-    
+
+    MAX(CAST(NULLIF(TRIM(CASE 
+        WHEN STRFTIME(date_my, '%b-%y') = 'Dec-23' THEN period_value 
+    END), '') AS DECIMAL(10,2))) AS "Dec-23",
+
+    MAX(CAST(NULLIF(TRIM(CASE 
+        WHEN STRFTIME(date_my, '%b-%y') = 'Dec-24' THEN period_value 
+    END), '') AS DECIMAL(10,2))) AS "Dec-24",
+
     -- Net Change = Dec-24 - Dec-23
-    MAX(CAST(NULLIF(TRIM(CASE WHEN period_date = 'Dec-24' THEN period_value END), '') AS DOUBLE)) -
-    MAX(CAST(NULLIF(TRIM(CASE WHEN period_date = 'Dec-23' THEN period_value END), '') AS DOUBLE)) AS "Net Change"
+    MAX(CAST(NULLIF(TRIM(CASE 
+        WHEN STRFTIME(date_my, '%b-%y') = 'Dec-24' THEN period_value 
+    END), '') AS DOUBLE)) -
+    MAX(CAST(NULLIF(TRIM(CASE 
+        WHEN STRFTIME(date_my, '%b-%y') = 'Dec-23' THEN period_value 
+    END), '') AS DOUBLE)) AS "Net Change"
 
 FROM 
     cashflow
@@ -50,9 +60,10 @@ WHERE
         WHEN 'GGCL' THEN 'Global Green India'
         WHEN 'GGE' THEN 'Global Green Europe'
     END
-    AND period_date IN ('Dec-23', 'Dec-24')
+    AND STRFTIME(date_my, '%b-%y') IN ('Dec-23', 'Dec-24')
 GROUP BY 
-    company_name, particular
+    company_name, particular;
+
 ```
 
 

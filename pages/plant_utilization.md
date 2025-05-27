@@ -91,12 +91,13 @@
 
 
 ```sql date_filter
-SELECT DISTINCT period_date AS date_filter,
-STRPTIME(period_date, '%b-%y') AS date_sort
+SELECT DISTINCT 
+    STRFTIME(date_my, '%b-%y') AS date_filter,
+    date_my AS date_sort
 FROM plant_utilization
-WHERE TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
+WHERE date_my IS NOT NULL
 ORDER BY date_sort DESC;
+
 ```
 
 ```sql plant
@@ -112,12 +113,13 @@ WITH base AS (
             WHEN 'GGCL' THEN 'Global Green India'
             WHEN 'GGE' THEN 'Global Green Europe'
         END
-        AND period_date = '${inputs.date_filter.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
         AND (
             ('${inputs.matric}' = 'GGE' AND plant_name = 'Puszta') 
             OR ('${inputs.matric}' = 'GGCL' AND plant_name = 'OBL')
         )
 )
+
 SELECT 
     a.category,
     a.period_value AS "CY Actual",
@@ -143,6 +145,7 @@ LEFT JOIN base b ON a.category = b.category AND b.period_type = 'CY AOP'
 LEFT JOIN base c ON a.category = c.category AND c.period_type = 'LY Actual'
 WHERE 
     a.period_type = 'CY Actual'
+
 ```
 
 ```sql plant_1
@@ -158,7 +161,7 @@ WITH base AS (
             WHEN 'GGCL' THEN 'Global Green India'
             WHEN 'GGE' THEN 'Global Green Europe'
         END
-        AND period_date = '${inputs.date_filter.value}'
+        AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
         AND (
             ('${inputs.matric}' = 'GGE' AND plant_name = 'Duna') 
             OR ('${inputs.matric}' = 'GGCL' AND plant_name = 'VKP')
@@ -189,14 +192,14 @@ LEFT JOIN base b ON a.category = b.category AND b.period_type = 'CY AOP'
 LEFT JOIN base c ON a.category = c.category AND c.period_type = 'LY Actual'
 WHERE 
     a.period_type = 'CY Actual'
+
 ```
 
 ```sql max_date
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_period_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_period_date
 FROM 
     plant_utilization;
-
 ```
 
 ```sql plant_combined_india
@@ -208,12 +211,10 @@ SELECT
   MAX(CASE WHEN plant_name = 'OBL' THEN "Cy Aop" END) AS OBL_Cy_Aop,
   MAX(CASE WHEN plant_name = 'OBL' THEN "Ly Actual" END) AS OBL_Ly_Actual,
 
-
   -- VKP columns
   MAX(CASE WHEN plant_name = 'VKP' THEN "Cy Actual" END) AS VKP_Cy_Actual,
   MAX(CASE WHEN plant_name = 'VKP' THEN "Cy Aop" END) AS VKP_Cy_Aop,
-  MAX(CASE WHEN plant_name = 'VKP' THEN "Ly Actual" END) AS VKP_Ly_Actual,
-
+  MAX(CASE WHEN plant_name = 'VKP' THEN "Ly Actual" END) AS VKP_Ly_Actual
 
 FROM (
   SELECT 
@@ -225,7 +226,6 @@ FROM (
     "Act Vs Aop %",
     "Growth Vs Ly %"
   FROM ${plant}
-  
 
   UNION ALL
 
@@ -238,7 +238,6 @@ FROM (
     "Act Vs Aop %",
     "Growth Vs Ly %"
   FROM ${plant_1}
-  
 ) AS combined
 
 GROUP BY Category
@@ -247,8 +246,7 @@ ORDER BY
     WHEN Category = 'Production' THEN 1
     WHEN Category = 'Despatches' THEN 2
     ELSE 99
-  END
-
+  END;
 
 ```
 

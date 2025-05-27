@@ -1,18 +1,5 @@
-<Grid cols = 2>
 
 ## 📝 Performance Overview
-
-<Dropdown data={date_filter} name=date_filter value=date_filter title="Year" defaultValue="2025" order = 'date_sort desc'>
-</Dropdown>
-
-</Grid>
-
-<div class="text-align: center; ml-32">
-  <p class="text-xs text-gray-500 text-center mt-2 italic">
-  * Select the year to get the insights for each month.
-</p>
-</div>
-
 
 <div class="flex items-center justify-between w-full">
 <ButtonGroup name="matric" display="tabs">
@@ -21,8 +8,20 @@
 </ButtonGroup>
 </div>
 
+<Grid cols = 3>
 
 ## 📈 YoY Trend - EBITDA
+
+<div class="text-align: center; ml-32">
+
+<Dropdown data={date_filter} name=date_filter value=date_filter title="Year" defaultValue="2025" order = 'date_sort desc'>
+</Dropdown>
+
+<Info description="Select the year to get the insights for each month." color="red" />
+
+</div>
+
+</Grid>
 
 <div class = 'mb-5'> </div>
 
@@ -34,17 +33,22 @@
   yAxisTitle="Values are in Million"
   y2AxisTitle="YoY Change (%)"
   markers={true}
+   echartsOptions={{ 
+  xAxis: [{
+    max: 'dataMax'
+  }]
+}}
 />
 
 <LineChart 
   data={sel_year_ebitda}
-  x="month_label"
+  x="month"
   y="Monthly"
   y2="mom_change"
   yAxisTitle="Values are in Million"
   y2AxisTitle="MoM Change (%)"
   markers={true}
-  sort={true}
+  sort=true
   xFmt="mmm-yy"
   yFmt=".2f"             
   tooltipTitle="month_label"
@@ -57,7 +61,20 @@
 
 <div class = 'mb-15'> </div>
 
+<Grid cols = 3>
+
 ## 📈 YoY Trend - PBT
+
+<div class="text-align: center; ml-32">
+
+<Dropdown data={date_filter_pbt} name=date_filter_pbt value=date_filter_pbt title="Year" defaultValue="2025" order = 'date_sort desc'>
+</Dropdown>
+
+<Info description="Select the year to get the insights for each month." color="red" />
+
+</div>
+
+</Grid>
 
 <LineChart 
   data={overview_PBT_yoy}
@@ -68,11 +85,16 @@
   yAxisTitle = "Values are in Million"
   y2AxisTitle = "YoY Change (%)"
   yFmt=".2f"
+   echartsOptions={{ 
+  xAxis: [{
+    max: 'dataMax'
+  }]
+}}
 />
 
 <LineChart 
   data={sel_year_pbt}
-  x="month_label"
+  x="month"
   y="Monthly"
   y2="mom_change"
   yAxisTitle="Values are in Million"
@@ -87,9 +109,20 @@
   y2Fmt="percent"
 />
 
-
+<Grid cols = 3>
 
 ## 📈 YoY Trend - PAT
+
+<div class="text-align: center; ml-32">
+
+<Dropdown data={date_filter_pat} name=date_filter_pat value=date_filter_pat title="Year" defaultValue="2025" order = 'date_sort desc'>
+</Dropdown>
+
+<Info description="Select the year to get the insights for each month." color="red" />
+
+</div>
+
+</Grid>
 
 <LineChart 
   data={overview_PAT_yoy}
@@ -100,11 +133,16 @@
   y2AxisTitle = "YoY Change (%)"
   markers={true}
   yFmt=".2f"
+   echartsOptions={{ 
+  xAxis: [{
+    max: 'dataMax'
+  }]
+}}
 />
 
 <LineChart 
   data={sel_year_pat}
-  x="month_label"
+  x="month"
   y="Monthly"
   y2="mom_change"
   yAxisTitle="Values are in Million"
@@ -124,17 +162,34 @@
 <div class = 'mb-15'> </div>
 
 
-
 ```sql date_filter
 SELECT DISTINCT 
-  STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS date_filter,
-  MIN(STRPTIME(period_date, '%b-%y')) AS date_sort  -- optional for sorting
+  CAST(EXTRACT(YEAR FROM date_my) AS TEXT) AS date_filter,
+  MIN(DATE_TRUNC('year', date_my)) AS date_sort  
 FROM income_statement
-WHERE TRIM(period_date) IS NOT NULL
-  AND TRIM(period_date) <> ''
+WHERE date_my IS NOT NULL
 GROUP BY date_filter
 ORDER BY date_sort DESC;
+```
 
+```sql date_filter_pbt
+SELECT DISTINCT 
+  CAST(EXTRACT(YEAR FROM date_my) AS TEXT) AS date_filter_pbt,
+  MIN(DATE_TRUNC('year', date_my)) AS date_sort  
+FROM income_statement
+WHERE date_my IS NOT NULL
+GROUP BY date_filter_pbt
+ORDER BY date_sort DESC;
+```
+
+```sql date_filter_pat
+SELECT DISTINCT 
+  CAST(EXTRACT(YEAR FROM date_my) AS TEXT) AS date_filter_pat,
+  MIN(DATE_TRUNC('year', date_my)) AS date_sort  
+FROM income_statement
+WHERE date_my IS NOT NULL
+GROUP BY date_filter_pat
+ORDER BY date_sort DESC;
 ```
 
 ```sql overview_EBITDA
@@ -143,8 +198,8 @@ WITH base AS (
         entity,
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS month,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -154,6 +209,7 @@ WITH base AS (
         END
         AND metric = 'EBITDA'
         AND metric_type = 'Actual'
+        AND date_my IS NOT NULL
 ),
 with_lag AS (
     SELECT 
@@ -194,8 +250,8 @@ WITH base AS (
         entity,
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS month,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -205,6 +261,7 @@ WITH base AS (
         END
         AND metric = 'PBT Before Exceptional'
         AND metric_type = 'Actual'
+        AND date_my IS NOT NULL
 ),
 with_lag AS (
     SELECT 
@@ -236,6 +293,7 @@ SELECT
     mom_change
 FROM with_mom
 ORDER BY metric, month;
+
 
 ```
 
@@ -245,8 +303,8 @@ WITH base AS (
         entity,
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS month,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -256,6 +314,7 @@ WITH base AS (
         END
         AND metric = 'PBT - (from operations)'  -- PAT proxy
         AND metric_type = 'Actual'
+        AND date_my IS NOT NULL
 ),
 with_lag AS (
     SELECT 
@@ -288,6 +347,7 @@ SELECT
 FROM with_mom
 ORDER BY metric, month;
 
+
 ```
 
 ```sql overview_EBITDA_yoy
@@ -296,7 +356,7 @@ WITH base AS (
         entity,
         TRIM(metric) AS metric,
         metric_type,
-        CAST(STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS INTEGER) AS year,  
+        EXTRACT(YEAR FROM date_my) AS year,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -307,16 +367,19 @@ WITH base AS (
         AND TRIM(metric) = 'EBITDA'
         AND TRIM(metric_type) = 'Actual'
         AND period_value IS NOT NULL
+        AND date_my IS NOT NULL
 ),
+
 yearly_agg AS (
     SELECT 
         entity,
         metric,
         year,
-        SUM(value) AS 'EBITDA'
+        SUM(value) AS "EBITDA"
     FROM base
     GROUP BY entity, metric, year
 ),
+
 with_yoy AS (
     SELECT 
         entity,
@@ -326,6 +389,7 @@ with_yoy AS (
         LAG(EBITDA) OVER (PARTITION BY entity, metric ORDER BY year) AS prev_year_value
     FROM yearly_agg
 ),
+
 final AS (
     SELECT 
         entity,
@@ -345,6 +409,7 @@ SELECT *
 FROM final
 ORDER BY entity, metric, year;
 
+
 ```
 
 ```sql overview_PBT_yoy
@@ -353,7 +418,7 @@ WITH base AS (
         entity,
         TRIM(metric) AS metric,
         metric_type,
-        CAST(STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS INTEGER) AS year,  
+        EXTRACT(YEAR FROM date_my) AS year,  
         period_value AS value
     FROM income_statement
     WHERE 
@@ -364,16 +429,19 @@ WITH base AS (
         AND TRIM(metric) = 'PBT Before Exceptional'
         AND TRIM(metric_type) = 'Actual'
         AND period_value IS NOT NULL
+        AND date_my IS NOT NULL
 ),
+
 yearly_agg AS (
     SELECT 
         entity,
         metric,
         year,
-        SUM(value) AS 'PBT'
+        SUM(value) AS "PBT"
     FROM base
     GROUP BY entity, metric, year
 ),
+
 with_yoy AS (
     SELECT 
         entity,
@@ -383,6 +451,7 @@ with_yoy AS (
         LAG(PBT) OVER (PARTITION BY entity, metric ORDER BY year) AS prev_year_value
     FROM yearly_agg
 ),
+
 final AS (
     SELECT 
         entity,
@@ -410,7 +479,7 @@ WITH base AS (
         entity,
         TRIM(metric) AS metric,
         metric_type,
-        CAST(STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS INTEGER) AS year,  
+        EXTRACT(YEAR FROM date_my) AS year,  
         period_value AS value
     FROM income_statement
     WHERE 
@@ -421,16 +490,19 @@ WITH base AS (
         AND TRIM(metric) = 'PBT - (from operations)'
         AND TRIM(metric_type) = 'Actual'
         AND period_value IS NOT NULL
+        AND date_my IS NOT NULL
 ),
+
 yearly_agg AS (
     SELECT 
         entity,
         metric,
         year,
-        SUM(value) AS 'PAT'
+        SUM(value) AS "PAT"
     FROM base
     GROUP BY entity, metric, year
 ),
+
 with_yoy AS (
     SELECT 
         entity,
@@ -440,6 +512,7 @@ with_yoy AS (
         LAG(PAT) OVER (PARTITION BY entity, metric ORDER BY year) AS prev_year_value
     FROM yearly_agg
 ),
+
 final AS (
     SELECT 
         entity,
@@ -458,6 +531,7 @@ final AS (
 SELECT *
 FROM final
 ORDER BY entity, metric, year;
+
 
 ```
 
@@ -479,33 +553,27 @@ WITH month_lookup AS (
     ) AS m(month_num, month_name)
 ),
 
-parsed_dates AS (
-    SELECT 
-        STRPTIME(period_date, '%b-%y') AS parsed_date
-    FROM income_statement
-    WHERE TRIM(period_date) IS NOT NULL
-),
-
 calendar_years AS (
     SELECT 
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN '2019'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2020 THEN '2020'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2021 THEN '2021'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2022 THEN '2022'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2023 THEN '2023'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2024 THEN '2024'
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2025 THEN '2025'
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN '2019'
+            WHEN EXTRACT(YEAR FROM date_my) = 2020 THEN '2020'
+            WHEN EXTRACT(YEAR FROM date_my) = 2021 THEN '2021'
+            WHEN EXTRACT(YEAR FROM date_my) = 2022 THEN '2022'
+            WHEN EXTRACT(YEAR FROM date_my) = 2023 THEN '2023'
+            WHEN EXTRACT(YEAR FROM date_my) = 2024 THEN '2024'
+            WHEN EXTRACT(YEAR FROM date_my) = 2025 THEN '2025'
         END AS date_filter,
 
         CASE 
-            WHEN EXTRACT(YEAR FROM parsed_date) = 2019 AND EXTRACT(MONTH FROM parsed_date) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
-            ELSE DATE_TRUNC('year', parsed_date)
+            WHEN EXTRACT(YEAR FROM date_my) = 2019 AND EXTRACT(MONTH FROM date_my) BETWEEN 4 AND 12 THEN DATE '2019-01-01'
+            ELSE DATE_TRUNC('year', date_my)
         END AS date_sort,
 
-        EXTRACT(MONTH FROM parsed_date) AS month_num,
-        STRFTIME(parsed_date, '%b-%y') AS month_label
-    FROM parsed_dates
+        EXTRACT(MONTH FROM date_my) AS month_num,
+        STRFTIME(date_my, '%b-%y') AS month_label
+    FROM income_statement
+    WHERE date_my IS NOT NULL
 ),
 
 calendar_labels AS (
@@ -535,6 +603,7 @@ FROM
     aggregated_calendar
 ORDER BY 
     date_sort DESC;
+
 ```
 
 ```sql sel_year_ebitda
@@ -543,10 +612,10 @@ WITH base AS (
         entity,
         metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS parsed_date,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        EXTRACT(YEAR FROM date_my) AS year,
+        EXTRACT(MONTH FROM date_my) AS month_num,
+        -- STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -556,24 +625,25 @@ WITH base AS (
         END
         AND metric = 'EBITDA'
         AND metric_type = 'Actual'
+        AND date_my IS NOT NULL
 ),
 
 filtered AS (
     SELECT 
         metric,
-        parsed_date AS month,
+        month,
         CAST(month_num AS INTEGER) AS month_sort,
-        month_label,
+        -- month_label,
         value
     FROM base
-    WHERE year = '${inputs.date_filter.value}'
+    WHERE year = CAST('${inputs.date_filter.value}' AS INTEGER)
 ),
 
 with_lag AS (
     SELECT 
         metric,
         month,
-        month_label,
+        -- month_label,
         month_sort,
         value AS Monthly,
         LAG(value) OVER (PARTITION BY metric ORDER BY month) AS prev_month_value
@@ -583,7 +653,8 @@ with_lag AS (
 with_mom AS (
     SELECT 
         metric,
-        month_label,
+        -- month_label,
+        month,
         month_sort,
         Monthly,
         prev_month_value,
@@ -597,13 +668,15 @@ with_mom AS (
 
 SELECT 
     metric,
-    month_label,
+    -- month_label,
+    month,
     month_sort,
     Monthly,
     prev_month_value,
     mom_change
 FROM with_mom
 ORDER BY month_sort;
+
 ```
 
 ```sel_year_pbt
@@ -612,10 +685,10 @@ WITH base AS (
         entity,
         TRIM(metric) AS metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS parsed_date,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        EXTRACT(YEAR FROM date_my) AS year,
+        EXTRACT(MONTH FROM date_my) AS month_num,
+        -- STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -626,24 +699,25 @@ WITH base AS (
         AND TRIM(metric) = 'PBT Before Exceptional'
         AND TRIM(metric_type) = 'Actual'
         AND period_value IS NOT NULL
+        AND date_my IS NOT NULL
 ),
 
 filtered AS (
     SELECT 
         metric,
-        parsed_date AS month,
+        month,
         CAST(month_num AS INTEGER) AS month_sort,
-        month_label,
+        -- month_label,
         value
     FROM base
-    WHERE year = '${inputs.date_filter.value}'
+    WHERE year = CAST('${inputs.date_filter_pbt.value}' AS INTEGER)
 ),
 
 with_lag AS (
     SELECT 
         metric,
         month,
-        month_label,
+        -- month_label,
         month_sort,
         value AS Monthly,
         LAG(value) OVER (PARTITION BY metric ORDER BY month) AS prev_month_value
@@ -653,7 +727,8 @@ with_lag AS (
 with_mom AS (
     SELECT 
         metric,
-        month_label,
+        -- month_label,
+        month,
         month_sort,
         Monthly,
         prev_month_value,
@@ -667,7 +742,8 @@ with_mom AS (
 
 SELECT 
     metric,
-    month_label,
+    -- month_label,
+    month,
     month_sort,
     Monthly,
     prev_month_value,
@@ -683,10 +759,10 @@ WITH base AS (
         entity,
         TRIM(metric) AS metric,
         metric_type,
-        STRPTIME(period_date, '%b-%y') AS parsed_date,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%Y') AS year,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%m') AS month_num,
-        STRFTIME(STRPTIME(period_date, '%b-%y'), '%b-%y') AS month_label,
+        date_my AS month,
+        EXTRACT(YEAR FROM date_my) AS year,
+        EXTRACT(MONTH FROM date_my) AS month_num,
+        -- STRFTIME(date_my, '%b-%y') AS month_label,
         period_value AS value
     FROM income_statement
     WHERE 
@@ -697,24 +773,25 @@ WITH base AS (
         AND TRIM(metric) = 'PBT - (from operations)'
         AND TRIM(metric_type) = 'Actual'
         AND period_value IS NOT NULL
+        AND date_my IS NOT NULL
 ),
 
 filtered AS (
     SELECT 
         metric,
-        parsed_date AS month,
+        month,
         CAST(month_num AS INTEGER) AS month_sort,
-        month_label,
+        -- month_label,
         value
     FROM base
-    WHERE year = '${inputs.date_filter.value}'
+    WHERE year = CAST('${inputs.date_filter_pat.value}' AS INTEGER)
 ),
 
 with_lag AS (
     SELECT 
         metric,
         month,
-        month_label,
+        -- month_label,
         month_sort,
         value AS Monthly,
         LAG(value) OVER (PARTITION BY metric ORDER BY month) AS prev_month_value
@@ -724,7 +801,8 @@ with_lag AS (
 with_mom AS (
     SELECT 
         metric,
-        month_label,
+        -- month_label,
+        month,
         month_sort,
         Monthly,
         prev_month_value,
@@ -738,11 +816,13 @@ with_mom AS (
 
 SELECT 
     metric,
-    month_label,
+    -- month_label,
+    month,
     month_sort,
     Monthly,
     prev_month_value,
     mom_change
 FROM with_mom
 ORDER BY month_sort;
+
 ```

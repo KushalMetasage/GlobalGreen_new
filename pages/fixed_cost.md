@@ -262,12 +262,12 @@
 
 ```sql date_filter
 SELECT 
-  DISTINCT period_date AS date_filter,
-  STRPTIME(period_date, '%b-%y') AS date_sort
+  DISTINCT STRFTIME(date_my, '%b-%y') AS date_filter,
+  date_my AS date_sort
 FROM fixed_cost_metrics
-WHERE source_section = 'Fixed Cost'
-  AND period_date IS NOT NULL
-  AND TRIM(period_date) <> ''
+WHERE 
+  source_section = 'Fixed Cost'
+  AND date_my IS NOT NULL
 ORDER BY date_sort DESC;
 ```
 
@@ -284,12 +284,12 @@ ORDER BY date_sort DESC;
 
 ```sql date_filter_cons
 SELECT 
-  DISTINCT period_date AS date_filter_cons,
-  STRPTIME(period_date, '%b-%y') AS date_sort
+  DISTINCT STRFTIME(date_my, '%b-%y') AS date_filter_cons,
+  date_my AS date_sort
 FROM fixed_cost_metrics
-WHERE source_section = 'Fixed Cost'
-  AND period_date IS NOT NULL
-  AND TRIM(period_date) <> ''
+WHERE 
+  source_section = 'Fixed Cost'
+  AND date_my IS NOT NULL
 ORDER BY date_sort DESC;
 ```
 
@@ -307,7 +307,7 @@ ORDER BY date_sort DESC;
 ```sql fixed_cost_data
 SELECT 
   entity,
-  period_date,
+  date_my,
   metric,
 
   MAX(CASE WHEN metric_type = 'CY-24 ACT' THEN period_value END) AS cy_24_act,
@@ -317,22 +317,23 @@ SELECT
   MAX(CASE WHEN metric_type = 'Variance vs LY' THEN period_value END) AS variance_vs_ly
 
 FROM fixed_cost_metrics
-WHERE source_section = 'Fixed Cost'
+WHERE 
+  source_section = 'Fixed Cost'
   AND entity = CASE '${inputs.matric}'
     WHEN 'GGCL' THEN 'Global Green India'
     WHEN 'GGE' THEN 'Global Green Europe'
   END
-  AND period_date = '${inputs.date_filter.value}'
-  AND TRIM(period_date) <> ''
-GROUP BY entity, period_date, metric
-ORDER BY period_date, metric;
+  AND STRFTIME(date_my, '%b-%y') = '${inputs.date_filter.value}'
+GROUP BY entity, date_my, metric
+ORDER BY date_my, metric;
+
 
 ```
 
 ```sql fixed_cost_data_ytd
 SELECT 
   entity,
-  period_date,
+  date_my,
   ytd,
   metric,
 
@@ -350,14 +351,14 @@ WHERE source_section = 'Fixed Cost'
   END
   AND ytd = '${inputs.date_filter_ytd.value}'
   AND TRIM(ytd) <> ''
-GROUP BY entity, period_date, ytd, metric
-ORDER BY period_date, metric;
+GROUP BY entity, date_my, ytd, metric
+ORDER BY date_my, metric;
 
  ```
 
  ```sql fixed_cost_data_cons
  SELECT 
-  period_date,
+  date_my,
   ytd,
   metric,
 
@@ -370,15 +371,16 @@ ORDER BY period_date, metric;
 FROM fixed_cost_metrics
 WHERE source_section = 'Fixed Cost'
   AND entity = 'Global Green'
-  AND period_date = '${inputs.date_filter_cons.value}'
-  AND TRIM(period_date) <> ''
-GROUP BY period_date, ytd, metric
-ORDER BY period_date, metric;
+  AND date_my = STRPTIME('${inputs.date_filter_cons.value}', '%b-%y')
+  AND date_my IS NOT NULL
+GROUP BY date_my, ytd, metric
+ORDER BY date_my, metric;
+
 ```
 
 ```sql fixed_cost_data__ytd_cons
  SELECT 
-  period_date,
+  date_my,
   ytd,
   metric,
 
@@ -393,22 +395,23 @@ WHERE source_section = 'Fixed Cost'
   AND entity = 'Global Green'
   AND ytd = '${inputs.date_filter_ytd_cons.value}'
   AND TRIM(ytd) <> ''
-GROUP BY period_date, ytd, metric
-ORDER BY period_date, metric;
+GROUP BY date_my, ytd, metric
+ORDER BY date_my, metric;
 ```
 
 ```sql max_fixed_cost_date
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_fixed_cost_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_fixed_cost_date
 FROM 
     fixed_cost_metrics
 WHERE 
-    period_date != 'Feb-25';
+    STRFTIME(date_my, '%b-%y') != 'Feb-25';
+
 ```    
 
 ```sql max_fixed_cost_ytd
 SELECT 
-    STRFTIME(MAX(STRPTIME(period_date, '%b-%y')), '%b-%y') AS max_fixed_cost_date
+    STRFTIME(MAX(date_my), '%b-%y') AS max_fixed_cost_date
 FROM 
-    fixed_cost_metrics
+    fixed_cost_metrics;
 ```    
